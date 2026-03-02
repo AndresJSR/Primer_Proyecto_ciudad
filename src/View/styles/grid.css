@@ -1,0 +1,44 @@
+#city-map {
+    position: relative;
+    width: 600px; /* 15 tiles * 40px (tileHeight) */
+    height: 600px; /* 15 tiles * 40px (tileHeight) */
+    margin: 0 auto;
+    background: transparent;
+    /* Centrado vertical en el contenedor */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: content-box;
+}
+
+.city-cell {
+    position: absolute;
+    width: 80px;
+    height: 40px;
+    background: linear-gradient(120deg, #e0e7ef 70%, #b0bec5 100%);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    box-shadow: 0 8px 16px 0 rgba(44,62,80,0.18), 0 4px 0 0 #b0bec5;
+    border: 1px solid #b0bec5;
+    transition: box-shadow 0.2s, transform 0.2s, z-index 0.2s;
+    z-index: 1;
+    /* Gradiente superior para simular iluminación */
+    background-image:
+        linear-gradient(120deg, #e0e7ef 70%, #b0bec5 100%),
+        linear-gradient(0deg, rgba(255,255,255,0.18) 0%, rgba(0,0,0,0.08) 100%);
+}
+
+.city-cell::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    clip-path: inherit;
+    background: linear-gradient(0deg, rgba(0,0,0,0.08) 0%, rgba(255,255,255,0.12) 100%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.city-cell:hover {
+    box-shadow: 0 24px 32px 0 rgba(44,62,80,0.28), 0 8px 0 0 #90a4ae;
+    transform: translateY(-16px) scale(1.08);
+    z-index: 2;
+}

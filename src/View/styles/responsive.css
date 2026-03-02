@@ -1,0 +1,21 @@
+@media (max-width: 1200px) {
+    .main-layout {
+        grid-template-columns: 180px 1fr 220px;
+    }
+    #city-map {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 900px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 80px 1fr 80px;
+    }
+    .sidebar.left, .sidebar.right {
+        display: none;
+    }
+    .center {
+        padding: 0;
+    }
+}
