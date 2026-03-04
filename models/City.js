@@ -1,3 +1,7 @@
+import Map from "./Map.js";
+import Resources from "./Resources.js";
+import Citizen from "./Citizen.js";
+import BuildingFactory from "../utils/BuildingFactory.js";
 export default class City {
   constructor({
     nombreCiudad,
@@ -15,9 +19,14 @@ export default class City {
     this.#validarNombre(nombreAlcalde, "Nombre de alcalde");
     this.#validarCoordenadas(latitud, longitud);
     this.#validarDimensiones(ancho, alto);
-
-    if (!mapa) {
-      throw new Error("La ciudad debe tener un mapa válido.");
+    // 👇 Nueva validación del mapa
+    if (!(mapa instanceof Map)) {
+      throw new Error("City: se requiere una instancia válida de Map.");
+    }
+    if (mapa.ancho !== ancho || mapa.alto !== alto) {
+      throw new Error(
+        "City: las dimensiones del mapa no coinciden con ancho/alto de la ciudad.",
+      );
     }
 
     // 📌 Datos básicos
@@ -39,16 +48,15 @@ export default class City {
 
     // 🏗️ Colecciones
     this.edificios = [];
-    this.vias = [];
     this.ciudadanos = [];
 
     // 💰 Recursos
-    this.recursos = {
-      dinero: recursosIniciales?.dinero ?? 50000,
-      electricidad: recursosIniciales?.electricidad ?? 0,
-      agua: recursosIniciales?.agua ?? 0,
-      alimentos: recursosIniciales?.alimentos ?? 0,
-    };
+    this.recursos = new Resources({
+      money: recursosIniciales?.money ?? 50000,
+      electricity: recursosIniciales?.electricity ?? 0,
+      water: recursosIniciales?.water ?? 0,
+      food: recursosIniciales?.food ?? 0,
+    });
 
     // 🛑 Estado del juego
     this.gameOver = false;
@@ -87,14 +95,6 @@ export default class City {
 
   eliminarEdificio(id) {
     this.edificios = this.edificios.filter((e) => e.id !== id);
-  }
-
-  agregarVia(via) {
-    this.vias.push(via);
-  }
-
-  eliminarVia(x, y) {
-    this.vias = this.vias.filter((v) => !(v.x === x && v.y === y));
   }
 
   agregarCiudadano(ciudadano) {
@@ -137,4 +137,66 @@ export default class City {
       throw new Error("El tamaño del mapa debe estar entre 15x15 y 30x30.");
     }
   }
+  getHomeOccupancy(buildingId) {
+    const b = this.edificios.find((e) => e.id === buildingId);
+    if (!b) throw new Error("Edificio no encontrado.");
+    if (b.category !== "residential")
+      throw new Error("El edificio no es residencial.");
+
+    const occupied = this.ciudadanos.filter(
+      (c) => c.homeBuildingId === buildingId,
+    ).length;
+    const free = b.capacity - occupied;
+
+    return { occupied, free };
+  }
+  getResidentialBuildings() {
+    return this.edificios.filter((e) => e.category === "residential");
+  }
+  hasFreeHousingSlot(buildingId) {
+    const { free } = this.getHomeOccupancy(buildingId);
+    return free > 0;
+  }
+  toJSON() {
+    return {
+      cityName: this.nombreCiudad,
+      mayor: this.nombreAlcalde,
+      regionNombre: this.regionNombre,
+      gridSize: { width: this.ancho, height: this.alto },
+      coordinates: { lat: this.latitud, lon: this.longitud },
+      turn: this.turnoActual,
+      score: this.puntuacionAcumulada,
+      happiness: this.felicidadPromedio,
+      map: this.mapa.toJSON(),
+      resources: this.recursos.toJSON(),
+      buildings: this.edificios.map((b) => (b.toJSON ? b.toJSON() : b)),
+      citizens: this.ciudadanos.map((c) => (c.toJSON ? c.toJSON() : c)),
+    };
+  }
+static fromJSON(obj) {
+  if (!obj || typeof obj !== "object") throw new Error("City.fromJSON: objeto inválido.");
+
+  const mapa = Map.fromJSON(obj.map);
+  const city = new City({
+    nombreCiudad: obj.cityName,
+    nombreAlcalde: obj.mayor,
+    regionNombre: obj.regionNombre,
+    latitud: obj.coordinates?.lat,
+    longitud: obj.coordinates?.lon,
+    ancho: obj.gridSize?.width,
+    alto: obj.gridSize?.height,
+    mapa,
+    recursosIniciales: obj.resources
+  });
+
+  city.turnoActual = obj.turn ?? 0;
+  city.puntuacionAcumulada = obj.score ?? 0;
+  city.felicidadPromedio = obj.happiness ?? 0;
+
+  city.recursos = Resources.fromJSON(obj.resources ?? {});
+  city.edificios = (obj.buildings ?? []).map(b => BuildingFactory.fromJSON(b));
+  city.ciudadanos = (obj.citizens ?? []).map(c => Citizen.fromJSON(c));
+
+  return city;
+}
 }

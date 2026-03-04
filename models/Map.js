@@ -29,18 +29,18 @@ export default class Map {
 
   getCell(x, y) {
     if (!this.isInside(x, y)) {
-      throw new Error(`Mapa: coordenadas fuera de rango (${x},${y}).`);
+      throw new Error(`Map: coordenadas fuera de rango (${x},${y}).`);
     }
     return this.grid[y][x];
   }
 
   setCell(x, y, cell) {
     if (!this.isInside(x, y)) {
-      throw new Error(`Mapa: coordenadas fuera de rango (${x},${y}).`);
+      throw new Error(`Map: coordenadas fuera de rango (${x},${y}).`);
     }
     // Validación estructural: debe ser Celda
     if (!(cell instanceof Celda)) {
-      throw new Error("Mapa: setCell requiere una instancia de Celda.");
+      throw new Error("Map: setCell requiere una instancia de Celda.");
     }
     this.grid[y][x] = cell;
   }
@@ -111,9 +111,9 @@ export default class Map {
 
   static fromJSON(obj) {
     if (!obj || typeof obj !== "object")
-      throw new Error("Mapa.fromJSON: objeto inválido.");
+      throw new Error("Map.fromJSON: objeto inválido.");
 
-    const mapa = new Mapa(obj.ancho, obj.alto);
+    const mapa = new Map(obj.ancho, obj.alto);
     mapa.grid = obj.grid.map((row) =>
       row.map(
         (c) => new Celda({ kind: c.kind, buildingId: c.buildingId ?? null }),
@@ -128,10 +128,10 @@ export default class Map {
 
   #validarDimensiones(ancho, alto) {
     if (!Number.isInteger(ancho) || !Number.isInteger(alto)) {
-      throw new Error("Mapa: ancho y alto deben ser enteros.");
+      throw new Error("Map: ancho y alto deben ser enteros.");
     }
     if (ancho < 15 || ancho > 30 || alto < 15 || alto > 30) {
-      throw new Error("Mapa: dimensiones deben estar entre 15 y 30.");
+      throw new Error("Map: dimensiones deben estar entre 15 y 30.");
     }
   }
 }
