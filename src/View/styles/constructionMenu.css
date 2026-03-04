@@ -1,0 +1,170 @@
+/* Menú de construcción City Builder */
+.construction-menu {
+    width: 100%;
+    background: #f7fafd;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    user-select: none;
+}
+.menu-category {
+    background: #fff;
+    border-radius: 8px;
+    margin: 0 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.menu-category.active, .menu-category:focus-within {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.category-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    color: #2d3a4a;
+    background: #e3eafc;
+    transition: background 0.2s;
+}
+.menu-category[data-category="residencial"] .category-toggle { background: #e3fcec; }
+.menu-category[data-category="comercial"] .category-toggle { background: #e3f0fc; }
+.menu-category[data-category="industrial"] .category-toggle { background: #fdf6e3; }
+.menu-category[data-category="servicios"] .category-toggle { background: #fce3ec; }
+.menu-category[data-category="utilidades"] .category-toggle { background: #e3f7fc; }
+.menu-category[data-category="infraestructura"] .category-toggle { background: #f3f3f3; }
+.menu-category[data-category="accion"] .category-toggle { background: #fbe3e3; }
+.category-toggle[aria-expanded="true"] {
+    background: #d0e2ff;
+}
+.category-options {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0 8px 8px;
+    animation: fadeIn 0.3s;
+}
+.menu-category.open .category-options {
+    display: flex;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: none; }
+}
+.build-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f7fafd;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    position: relative;
+    min-height: 44px;
+    min-width: 44px;
+}
+.build-option .icon.placeholder {
+    width: 28px;
+    height: 28px;
+    background: #dbeafe;
+    border-radius: 6px;
+    display: inline-block;
+}
+.build-option .name {
+    flex: 1;
+    font-weight: 500;
+    color: #2d3a4a;
+}
+.build-option .cost {
+    font-size: 0.95em;
+    color: #6c7a89;
+    margin-left: 8px;
+}
+.build-option[disabled], .build-option.disabled {
+    background: #f3f3f3;
+    color: #b0b0b0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.build-option.active, .build-option:focus {
+    background: #d0e2ff;
+    box-shadow: 0 2px 8px rgba(0,80,255,0.08);
+}
+.build-option:not([disabled]):hover {
+    background: #e3eafc;
+}
+.build-option .tooltip {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #222;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    white-space: nowrap;
+    z-index: 10;
+    margin-left: 8px;
+}
+.build-option:hover .tooltip, .build-option:focus .tooltip {
+    display: block;
+}
+
+/* Responsive: móvil menú inferior */
+@media (max-width: 767px) {
+    .sidebar.left {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        top: auto;
+        width: 100vw;
+        height: auto;
+        z-index: 100;
+        background: none;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        padding: 0;
+    }
+    .construction-menu {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0 0 4px 0;
+        background: #fff;
+    }
+    .menu-category {
+        min-width: 90px;
+        margin: 0 2px;
+        border-radius: 8px;
+        box-shadow: none;
+    }
+    .category-toggle {
+        font-size: 0.95rem;
+        padding: 8px 6px;
+        border-radius: 8px 8px 0 0;
+    }
+    .category-options {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 44px;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+        z-index: 200;
+    }
+}
