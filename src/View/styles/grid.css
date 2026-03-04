@@ -1,14 +1,9 @@
 #city-map {
     position: relative;
-    width: 600px; /* 15 tiles * 40px (tileHeight) */
-    height: 600px; /* 15 tiles * 40px (tileHeight) */
-    margin: 0 auto;
+    margin: 0;
     background: transparent;
-    /* Centrado vertical en el contenedor */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     box-sizing: content-box;
+    /* El tamaño y centrado lo maneja .map-camera y el sistema de cámara */
 }
 
 .city-cell {
