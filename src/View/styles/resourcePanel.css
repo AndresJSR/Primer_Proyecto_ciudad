@@ -1,131 +1,247 @@
-/* Panel de Recursos City Builder */
+/* ================================================
+   RESOURCE PANEL — City Builder  |  Dark Pro
+   ================================================ */
+
 .resource-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: #f7fafd;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    padding: 16px 12px;
-    margin: 16px 0 0 0;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    user-select: none;
-    transition: background 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-ui);
+  user-select: none;
+  position: relative;
 }
+
+/* Label */
+.resource-panel::before {
+  content: '// STATUS';
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+/* ── Single resource row ── */
 .resource {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-radius: 8px;
-    position: relative;
-    transition: background 0.3s, color 0.3s;
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  cursor: default;
 }
+
+.resource:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border);
+}
+
+/* ── Icon dot ── */
 .resource .icon {
-    width: 24px;
-    height: 24px;
-    display: inline-block;
-    border-radius: 6px;
-    background: #e3eafc;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.resource.money .icon { background: #d1fae5; }
-.resource.electricity .icon { background: #fef08a; }
-.resource.water .icon { background: #bae6fd; }
-.resource.food .icon { background: #fde68a; }
-.resource.population .icon { background: #e0e7ef; }
-.resource.happiness .icon { background: #fbcfe8; }
+
+/* Glow pulse on icon */
+.resource .icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.5;
+  filter: blur(6px);
+}
+
+/* Per-resource icon colors */
+.resource.money      .icon { background: rgba(61,255,160,0.15); border: 1px solid rgba(61,255,160,0.25); }
+.resource.money      .icon::after { background: #3dffa0; }
+
+.resource.electricity .icon { background: rgba(255,214,71,0.15); border: 1px solid rgba(255,214,71,0.25); }
+.resource.electricity .icon::after { background: #ffd647; }
+
+.resource.water      .icon { background: rgba(88,166,255,0.15); border: 1px solid rgba(88,166,255,0.25); }
+.resource.water      .icon::after { background: #58a6ff; }
+
+.resource.food       .icon { background: rgba(255,179,71,0.15); border: 1px solid rgba(255,179,71,0.25); }
+.resource.food       .icon::after { background: #ffb347; }
+
+.resource.population .icon { background: rgba(189,147,249,0.15); border: 1px solid rgba(189,147,249,0.25); }
+.resource.population .icon::after { background: #bd93f9; }
+
+.resource.happiness  .icon { background: rgba(255,121,198,0.15); border: 1px solid rgba(255,121,198,0.25); }
+.resource.happiness  .icon::after { background: #ff79c6; }
+
+/* ── Label ── */
 .resource .label {
-    flex: 1;
-    font-weight: 500;
-    color: #2d3a4a;
-    font-size: 1em;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.2s;
 }
+
+.resource:hover .label { color: var(--text-secondary); }
+
+/* ── Value ── */
 .resource .value {
-    font-size: 1.1em;
-    font-weight: 600;
-    min-width: 60px;
-    text-align: right;
-    transition: color 0.4s, background 0.4s;
-    border-radius: 6px;
-    padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+  letter-spacing: 0.02em;
+  transition: color 0.3s;
+  white-space: nowrap;
 }
-.resource.money .value {
-    color: #16a34a;
-    background: #e3fcec;
-    transition: color 0.4s, background 0.4s;
-}
-.resource.money.low .value {
-    color: #f59e42;
-    background: #fef9c3;
-}
-.resource.money.critical .value {
-    color: #dc2626;
-    background: #fee2e2;
-}
-.resource .value.animated {
-    animation: valueChange 0.5s;
-}
-@keyframes valueChange {
-    0% { background: #dbeafe; }
-    100% { background: inherit; }
-}
-.resource .tooltip {
-    display: none;
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #222;
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 0.98em;
-    white-space: pre-line;
-    z-index: 10;
-    margin-left: 10px;
-    min-width: 180px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-}
-.resource:hover .tooltip, .resource:focus-within .tooltip {
-    display: block;
+
+/* Per-resource value color */
+.resource.money      .value { color: #3dffa0; }
+.resource.electricity .value { color: #ffd647; }
+.resource.water      .value { color: #58a6ff; }
+.resource.food       .value { color: #ffb347; }
+.resource.population .value { color: #bd93f9; }
+.resource.happiness  .value { color: #ff79c6; }
+
+/* ── State: low / critical ── */
+.resource.low .value  { color: var(--warn) !important; }
+
+.resource.critical {
+  border-color: rgba(255,92,106,0.25);
+  background: rgba(255,92,106,0.05);
 }
 .resource.critical .value {
-    color: #dc2626;
-    background: #fee2e2;
-    animation: blink 1s infinite alternate;
+  color: var(--danger) !important;
+  animation: critBlink 1.2s ease-in-out infinite alternate;
 }
-@keyframes blink {
-    0% { opacity: 1; }
-    100% { opacity: 0.7; }
+.resource.critical .label { color: rgba(255,92,106,0.7); }
+
+@keyframes critBlink {
+  0%   { opacity: 1; text-shadow: 0 0 8px rgba(255,92,106,0.6); }
+  100% { opacity: 0.65; text-shadow: none; }
 }
-/* Responsive: móvil header colapsable */
+
+/* ── Value change flash ── */
+.resource .value.animated {
+  animation: valueFlash 0.5s ease;
+}
+@keyframes valueFlash {
+  0%   { color: #fff; text-shadow: 0 0 12px #fff; }
+  100% { text-shadow: none; }
+}
+
+/* ── Progress bar (optional, uses data-fill CSS var) ── */
+.resource-bar {
+  grid-column: 2 / -1;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: -4px;
+}
+.resource-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(.4,1,.6,1);
+  background: var(--accent);
+}
+
+/* ── Tooltip ── */
+.resource .tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-accent);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.80rem;
+  white-space: pre-line;
+  z-index: 999;
+  min-width: 190px;
+  line-height: 1.7;
+  box-shadow: var(--shadow-panel), 0 0 24px var(--accent-glow);
+  letter-spacing: 0.02em;
+}
+
+.resource:hover .tooltip,
+.resource:focus-within .tooltip {
+  display: block;
+  animation: fadeUp 0.15s ease;
+}
+
+/* ── Divider between resource groups (optional .resource-divider element) ── */
+.resource-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+  border: none;
+}
+
+/* ================================================
+   RESPONSIVE — mobile top bar
+   ================================================ */
 @media (max-width: 767px) {
-    .resource-panel {
-        flex-direction: row;
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 200;
-        border-radius: 0 0 16px 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-        padding: 4px 0;
-        margin: 0;
-        background: #fff;
-        overflow-x: auto;
-        gap: 0;
-    }
-    .resource {
-        flex-direction: column;
-        align-items: center;
-        min-width: 60px;
-        padding: 4px 6px;
-        font-size: 0.98em;
-    }
-    .resource .label {
-        display: none;
-    }
-    .resource .value {
-        font-size: 1em;
-        min-width: 0;
-        padding: 0 4px;
-    }
+  .resource-panel {
+    flex-direction: row;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: 0 1px 0 var(--border), 0 8px 32px rgba(0,0,0,0.55);
+    padding: 6px 4px;
+    margin: 0;
+    background: var(--bg-surface);
+    overflow-x: auto;
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .resource-panel::-webkit-scrollbar { display: none; }
+  .resource-panel::before { display: none; }
+
+  .resource {
+    flex-direction: column;
+    grid-template-columns: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    padding: 4px 8px;
+    gap: 4px;
+    border-radius: var(--radius-sm);
+  }
+  .resource .label { display: none; }
+  .resource .value {
+    font-size: 0.78rem;
+    text-align: center;
+    min-width: 0;
+  }
+  .resource .icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+  }
+  .resource .tooltip {
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+  }
+  .resource-bar { display: none; }
 }
