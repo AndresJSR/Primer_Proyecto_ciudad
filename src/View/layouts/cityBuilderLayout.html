@@ -1,0 +1,203 @@
+<!-- Layout principal del City Builder: estructura de mapa y sidebars -->
+<div class="main-layout">
+    <aside class="sidebar left">
+        <!-- Menú de construcción -->
+        <nav id="construction-menu" class="construction-menu">
+            <div class="menu-category" data-category="residencial">
+                <button class="category-toggle" aria-expanded="false">Residencial</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="house" data-cost="1000" title="Casa ($1000)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Casa</span>
+                        <span class="cost">$1000</span>
+                    </button>
+                    <button class="build-option" data-type="apartment" data-cost="3000" title="Apartamento ($3000)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Apartamento</span>
+                        <span class="cost">$3000</span>
+                    </button>
+                </div>
+            </div>
+            <div class="menu-category" data-category="comercial">
+                <button class="category-toggle" aria-expanded="false">Comercial</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="store" data-cost="2000" title="Tienda ($2000)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Tienda</span>
+                        <span class="cost">$2000</span>
+                    </button>
+                    <button class="build-option" data-type="mall" data-cost="8000" title="Centro Comercial ($8000)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Centro Comercial</span>
+                        <span class="cost">$8000</span>
+                    </button>
+                </div>
+            </div>
+            <div class="menu-category" data-category="industrial">
+                <button class="category-toggle" aria-expanded="false">Industrial</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="factory" data-cost="5000" title="Fábrica ($5000)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Fábrica</span>
+                        <span class="cost">$5000</span>
+                    </button>
+                    <button class="build-option" data-type="farm" data-cost="3000" title="Granja ($3000)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Granja</span>
+                        <span class="cost">$3000</span>
+                    </button>
+                </div>
+            </div>
+            <div class="menu-category" data-category="servicios">
+                <button class="category-toggle" aria-expanded="false">Servicios</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="police" title="Estación de Policía">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Policía</span>
+                    </button>
+                    <button class="build-option" data-type="fire" title="Estación de Bomberos">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Bomberos</span>
+                    </button>
+                    <button class="build-option" data-type="hospital" title="Hospital">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Hospital</span>
+                    </button>
+                </div>
+            </div>
+            <div class="menu-category" data-category="utilidades">
+                <button class="category-toggle" aria-expanded="false">Utilidades</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="powerplant" title="Planta Eléctrica">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Planta Eléctrica</span>
+                    </button>
+                    <button class="build-option" data-type="waterplant" title="Planta de Agua">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Planta de Agua</span>
+                    </button>
+                </div>
+            </div>
+            <div class="menu-category" data-category="infraestructura">
+                <button class="category-toggle" aria-expanded="false">Vías</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="road" data-cost="100" title="Vía ($100 por celda)">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Vía</span>
+                        <span class="cost">$100</span>
+                    </button>
+                </div>
+            </div>
+            <div class="menu-category" data-category="accion">
+                <button class="category-toggle" aria-expanded="false">Demoler</button>
+                <div class="category-options">
+                    <button class="build-option" data-type="demolish" title="Modo demolición">
+                        <span class="icon placeholder"></span>
+                        <span class="name">Demoler</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Panel de recursos -->
+        <section id="resource-panel" class="resource-panel">
+            <div class="resource money" data-tooltip="">
+                <span class="icon money"></span>
+                <span class="label">Dinero</span>
+                <span class="value" id="money-value">$0</span>
+            </div>
+            <div class="resource electricity" data-tooltip="">
+                <span class="icon electricity"></span>
+                <span class="label">Electricidad</span>
+                <span class="value" id="electricity-value">0 / 0</span>
+            </div>
+            <div class="resource water" data-tooltip="">
+                <span class="icon water"></span>
+                <span class="label">Agua</span>
+                <span class="value" id="water-value">0 / 0</span>
+            </div>
+            <div class="resource food" data-tooltip="">
+                <span class="icon food"></span>
+                <span class="label">Alimentos</span>
+                <span class="value" id="food-value">0</span>
+            </div>
+            <div class="resource population" data-tooltip="">
+                <span class="icon population"></span>
+                <span class="label">Población</span>
+                <span class="value" id="population-value">0</span>
+            </div>
+            <div class="resource happiness" data-tooltip="">
+                <span class="icon happiness"></span>
+                <span class="label">Felicidad</span>
+                <span class="value" id="happiness-value">0%</span>
+            </div>
+        </section>
+    </aside>
+    <main class="center">
+        <div class="map-viewport">
+            <div class="map-camera">
+                <div id="city-map"></div>
+            </div>
+        </div>
+    </main>
+    <aside class="sidebar right info-sidebar" aria-label="Panel de información contextual">
+        <!-- Widget de Clima (HU-016) -->
+        <section id="weather-widget" class="info-widget weather-widget widget-frame" aria-label="Clima actual">
+            <header class="widget-header">
+                <span class="widget-icon weather-icon" aria-hidden="true"></span>
+                <h3 class="widget-title">Clima</h3>
+            </header>
+            <div class="widget-content">
+                <div class="weather-main">
+                    <span class="weather-temp">0°C</span>
+                    <span class="weather-condition">Desconocido</span>
+                </div>
+                <div class="weather-details">
+                    <span class="weather-humidity">Humedad: 0%</span>
+                    <span class="weather-wind">Viento: 0 km/h</span>
+                </div>
+            </div>
+            <div class="widget-loading" style="display:none;">
+                <span class="loader"></span> Consultando clima...
+            </div>
+            <div class="widget-error" style="display:none;">
+                <span class="error-message">No se pudo obtener el clima.</span>
+            </div>
+        </section>
+
+        <!-- Panel de Noticias (HU-017) -->
+        <section id="news-panel" class="info-widget news-widget widget-frame" aria-label="Noticias regionales">
+            <header class="widget-header">
+                <span class="widget-icon news-icon" aria-hidden="true"></span>
+                <h3 class="widget-title">Noticias</h3>
+            </header>
+            <div class="widget-content news-list">
+                <article class="news-item">
+                    <h4 class="news-title">Sin noticias disponibles</h4>
+                    <p class="news-description">No se han cargado noticias aún.</p>
+                </article>
+            </div>
+            <div class="widget-loading" style="display:none;">
+                <span class="loader"></span> Cargando noticias...
+            </div>
+            <div class="widget-error" style="display:none;">
+                <span class="error-message">No se pudieron obtener noticias.</span>
+            </div>
+        </section>
+    </aside>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <span class="modal-icon placeholder"></span>
+            <h2 class="modal-title"></h2>
+            <button class="modal-close" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-content">
+            <p class="modal-description"></p>
+            <div class="modal-stats"></div>
+        </div>
+        <div class="modal-actions"></div>
+    </div>
+</div>

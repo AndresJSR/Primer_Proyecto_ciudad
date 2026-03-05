@@ -170,7 +170,7 @@ function setupCameraControls() {
     });
 }
 
-fetch('src/View/layouts/mainLayout.html')
+fetch('src/View/layouts/cityBuilderLayout.html')
     .then(res => res.text())
     .then(html => {
         document.getElementById('app').innerHTML = html;
