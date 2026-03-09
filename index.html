@@ -11,32 +11,7 @@
     <link rel="stylesheet" href="src/View/styles/startMenu.css">
 </head>
 <body>
-    <!-- Layout principal -->
     <div id="app"></div>
-    <script>
-      // Cargar el menú de inicio primero
-      fetch('src/View/layouts/startMenu.html')
-        .then(res => res.text())
-        .then(html => {
-          document.getElementById('app').innerHTML = html;
-          // Cargar el controlador del menú de inicio
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.src = 'src/Business/Controllers/MainMenuController.js';
-          document.body.appendChild(script);
-          script.onload = () => {
-            // Ya no es necesario importar ni llamar a initMainMenu, el IIFE se ejecuta solo
-            // Escuchar evento para iniciar el juego
-            window.addEventListener('startGame', (e) => {
-              // Limpiar el menú y cargar el juego normalmente
-              document.getElementById('app').innerHTML = '';
-              // Aquí se puede pasar e.detail.mapContent a App.js si es necesario
-              const appScript = document.createElement('script');
-              appScript.src = 'src/App.js';
-              document.body.appendChild(appScript);
-            });
-          };
-        });
-    </script>
+    <script type="module" src="src/Business/Controllers/MainMenuLoader.js"></script>
 </body>
 </html>
