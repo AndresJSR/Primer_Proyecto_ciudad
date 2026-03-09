@@ -15,6 +15,14 @@ window.addEventListener('buildModeChanged', (e) => {
     console.log('Modo de construcción:', e.detail.type);
 });
 
+// Permitir recibir el contenido del mapa personalizado desde el menú de inicio
+let customMapContent = null;
+window.addEventListener('startGame', (e) => {
+    if (e && e.detail && e.detail.mapContent) {
+        customMapContent = e.detail.mapContent;
+    }
+});
+
 // CONFIGURACIÓN GLOBAL
 const tileWidth = 80;
 const tileHeight = 40;
@@ -256,6 +264,14 @@ function renderGrid() {
     if (!map) return;
 
     map.innerHTML = '';
+
+    // Si hay un mapa personalizado, úsalo aquí
+    if (customMapContent) {
+        // Aquí puedes procesar customMapContent para crear el mapa
+        // Por ahora solo lo mostramos en consola
+        console.log('Mapa personalizado cargado:', customMapContent);
+        // TODO: lógica para parsear y renderizar el mapa personalizado
+    }
 
     const mapWidth  = (gridSize + gridSize) * (tileWidth  / 2);
     const mapHeight = (gridSize + gridSize) * (tileHeight / 2);

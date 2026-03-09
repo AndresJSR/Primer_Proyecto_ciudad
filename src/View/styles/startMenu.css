@@ -1,0 +1,415 @@
+/* ===================================================
+   CITY BUILDER — MENÚ DE INICIO
+   Estética: Industrial-Futurista / Dark Urban
+   =================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-deep:       #080c10;
+  --bg-surface:    #0d1318;
+  --bg-card:       #111820;
+  --border:        rgba(255,255,255,0.07);
+  --border-glow:   rgba(255,180,40,0.35);
+  --accent:        #ffb428;
+  --accent-dim:    rgba(255,180,40,0.18);
+  --accent-glow:   rgba(255,180,40,0.08);
+  --text-primary:  #eef2f7;
+  --text-secondary:#7a8a9a;
+  --text-muted:    #3a4a5a;
+  --sky-silhouette:rgba(255,180,40,0.06);
+  --font-display:  'Bebas Neue', sans-serif;
+  --font-body:     'Barlow', sans-serif;
+}
+
+/* ──────────────────────────────────────
+   SCENE / FULL PAGE
+   ────────────────────────────────────── */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-deep);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ──────────────────────────────────────
+   SKYLINE DE FONDO
+   ────────────────────────────────────── */
+.skyline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 320px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.skyline svg {
+  width: 100%;
+  height: 100%;
+}
+
+.skyline svg rect {
+  fill: var(--sky-silhouette);
+}
+
+/* Efecto de niebla / degradado que difumina la skyline */
+.skyline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(8,12,16,0.95) 0%,
+    rgba(8,12,16,0.4)  50%,
+    transparent        100%
+  );
+}
+
+/* ──────────────────────────────────────
+   GRID URBANA DE FONDO
+   ────────────────────────────────────── */
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,180,40,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,180,40,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Viñeta central */
+.grid-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 30%, var(--bg-deep) 100%);
+}
+
+/* ──────────────────────────────────────
+   PARTÍCULAS
+   ────────────────────────────────────── */
+.particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  animation: float-particle var(--dur, 6s) ease-in-out var(--delay, 0s) infinite;
+}
+
+@keyframes float-particle {
+  0%   { transform: translateY(0) scale(1);   opacity: 0; }
+  20%  { opacity: 0.6; }
+  80%  { opacity: 0.3; }
+  100% { transform: translateY(-120px) scale(0); opacity: 0; }
+}
+
+/* ──────────────────────────────────────
+   MENÚ CARD
+   ────────────────────────────────────── */
+#start-menu {
+  position: relative;
+  z-index: 10;
+  animation: menu-in 0.9s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.menu-inner {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 52px 56px 40px;
+  width: min(460px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  position: relative;
+  overflow: hidden;
+
+  /* Glow sutil desde arriba */
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 32px 80px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Línea de acento superior */
+.menu-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.8;
+}
+
+/* Manchas de luz ambiental dentro de la card */
+.menu-inner::after {
+  content: '';
+  position: absolute;
+  top: -80px; left: -80px;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(255,180,40,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ──────────────────────────────────────
+   LOGO / TÍTULO
+   ────────────────────────────────────── */
+.logo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.logo-tag {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.logo-title {
+  font-family: var(--font-display);
+  font-size: clamp(62px, 12vw, 88px);
+  line-height: 0.9;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.logo-accent {
+  color: var(--accent);
+  display: inline-block;
+  text-shadow: 0 0 40px rgba(255,180,40,0.25);
+}
+
+.logo-line {
+  width: 48px;
+  height: 2px;
+  background: var(--accent);
+  margin-top: 4px;
+  opacity: 0.6;
+  border-radius: 2px;
+}
+
+/* ──────────────────────────────────────
+   BOTONES
+   ────────────────────────────────────── */
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Ocultar el input file nativo */
+#map-file-input {
+  display: none;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+  outline: none;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.btn:active { transform: scale(0.97); }
+
+/* — Primario (Seleccionar Mapa) — */
+.btn-primary {
+  background: var(--accent);
+  color: #0a0e12;
+  box-shadow: 0 4px 20px rgba(255,180,40,0.2);
+}
+
+.btn-primary::before {
+  background: rgba(255,255,255,0.15);
+}
+
+.btn-primary:hover {
+  background: #ffc340;
+  box-shadow: 0 6px 28px rgba(255,180,40,0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:hover::before { opacity: 1; }
+
+/* — Secundario (Jugar) — */
+.btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.btn-secondary::before {
+  background: var(--accent-glow);
+}
+
+.btn-secondary:not(:disabled):hover {
+  border-color: var(--border-glow);
+  color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 0 18px rgba(255,180,40,0.12);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:not(:disabled):hover::before { opacity: 1; }
+
+.btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+/* Ícono del botón */
+.btn-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.18);
+}
+
+.btn-primary .btn-icon {
+  background: rgba(0,0,0,0.2);
+}
+
+/* Badge con nombre de mapa */
+.btn-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: var(--accent);
+  opacity: 0;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+}
+
+.btn-badge.visible { opacity: 1; }
+
+/* ──────────────────────────────────────
+   FILE INFO
+   ────────────────────────────────────── */
+.file-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.3s ease;
+}
+
+.file-info:empty { display: none; }
+
+.file-info .fi-icon {
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.file-info .fi-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.file-info .fi-size {
+  color: var(--text-muted);
+}
+
+/* ──────────────────────────────────────
+   FOOTER DEL MENÚ
+   ────────────────────────────────────── */
+.menu-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: -8px;
+}
+
+.dot {
+  opacity: 0.4;
+}
+
+/* ──────────────────────────────────────
+   RESPONSIVE
+   ────────────────────────────────────── */
+@media (max-width: 480px) {
+  .menu-inner {
+    padding: 40px 32px 32px;
+    gap: 28px;
+  }
+
+  .btn {
+    padding: 14px 18px;
+  }
+}
