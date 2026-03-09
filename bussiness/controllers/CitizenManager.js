@@ -1,4 +1,4 @@
-import Citizen from "../models/Citizen.js";
+import Citizen from "../../models/Citizen.js";
 
 export default class CitizenManager {
   constructor(city, config = {}) {

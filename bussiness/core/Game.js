@@ -2,8 +2,8 @@ import Config from "./Config.js";
 import GameState from "./GameState.js";
 import TurnSystem from "./TurnSystem.js";
 
-import City from "../models/City.js";
-import Map from "../models/Map.js";
+import City from "../../models/City.js";
+import Map from "../../models/Map.js";
 
 import BuildingManager from "../controllers/BuildingManager.js";
 import CitizenManager from "../controllers/CitizenManager.js";

@@ -1,4 +1,4 @@
-import Celda from "./Celda.js";
+import Celda from "./Cell.js";
 
 export default class Map {
   constructor(ancho, alto) {

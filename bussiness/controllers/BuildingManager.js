@@ -1,9 +1,9 @@
-import ResidentialBuilding from "../models/ResidentialBuilding.js";
-import CommercialBuilding from "../models/CommercialBuilding.js";
-import IndustrialBuilding from "../models/IndustrialBuilding.js";
-import ServiceBuilding from "../models/ServiceBuilding.js";
-import UtilityPlant from "../models/UtilityPlant.js";
-import ParkBuilding from "../models/ParkBuilding.js";
+import CommercialBuilding from "../../models/CommercialBuilding.js";
+import IndustrialBuilding from "../../models/IndustrialBuilding.js";
+import ParkBuilding from "../../models/ParkBuilding.js";
+import ResidentialBuilding from "../../models/ResidentialBuilding.js";
+import ServiceBuilding from "../../models/ServiceBuilding.js";
+import UtilityPlant from "../../models/UtilityPlant.js";
 
 export default class BuildingManager {
   constructor(city, config = {}) {

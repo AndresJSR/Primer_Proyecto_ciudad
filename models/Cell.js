@@ -37,14 +37,14 @@ export default class Cell {
   }
 
   static grass() {
-    return new Celda({ kind: "grass" });
+    return new Cell({ kind: "grass" });
   }
 
   static road() {
-    return new Celda({ kind: "road" });
+    return new Cell({ kind: "road" });
   }
 
   static building(buildingId) {
-    return new Celda({ kind: "building", buildingId });
+    return new Cell({ kind: "building", buildingId });
   }
 }
