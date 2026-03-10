@@ -11,13 +11,14 @@ export function loadMainMenu() {
       script.src = 'src/Business/Controllers/MainMenuController.js';
       document.body.appendChild(script);
       script.onload = () => {
-        // Escuchar evento para iniciar el juego
         window.addEventListener('startGame', (e) => {
+          window.__CITY_BUILDER_START_DATA__ = e.detail ?? null;
           document.getElementById('app').innerHTML = '';
           const appScript = document.createElement('script');
+          appScript.type = 'module';
           appScript.src = 'src/App.js';
           document.body.appendChild(appScript);
-        });
+        }, { once: true });
       };
     });
 }

@@ -51,3 +51,64 @@
     background: #7de055;
     box-shadow: 0 4px 0 #357a1e;
 }
+
+.city-cell.terrain-road {
+    background: #78838f;
+    box-shadow: 0 4px 0 #4d5761;
+}
+
+.city-cell.terrain-road:hover {
+    background: #8793a0;
+    box-shadow: 0 10px 0 #4d5761;
+}
+
+.city-cell.terrain-building {
+    background: linear-gradient(180deg, #f4d06f 0%, #c98f38 100%);
+    box-shadow: 0 4px 0 #885d1e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.city-cell.terrain-building:hover {
+    box-shadow: 0 10px 0 #885d1e;
+}
+
+.city-cell.building-residential {
+    background: linear-gradient(180deg, #7cc6fe 0%, #4e8dc6 100%);
+    box-shadow: 0 4px 0 #355d84;
+}
+
+.city-cell.building-commercial {
+    background: linear-gradient(180deg, #ffd166 0%, #d29a1f 100%);
+    box-shadow: 0 4px 0 #8c6518;
+}
+
+.city-cell.building-industrial {
+    background: linear-gradient(180deg, #b8b8b8 0%, #7a7a7a 100%);
+    box-shadow: 0 4px 0 #505050;
+}
+
+.city-cell.building-utility {
+    background: linear-gradient(180deg, #c3bef0 0%, #7f74c8 100%);
+    box-shadow: 0 4px 0 #564e8d;
+}
+
+.city-cell.building-service {
+    background: linear-gradient(180deg, #f497b6 0%, #c75f86 100%);
+    box-shadow: 0 4px 0 #8c415e;
+}
+
+.city-cell.building-park {
+    background: linear-gradient(180deg, #9be564 0%, #4d9e32 100%);
+    box-shadow: 0 4px 0 #2f6c1e;
+}
+
+.building-label {
+    font: 700 12px/1 Arial, sans-serif;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    letter-spacing: 0.04em;
+    user-select: none;
+    pointer-events: none;
+}

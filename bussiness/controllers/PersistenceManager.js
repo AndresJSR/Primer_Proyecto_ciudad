@@ -1,160 +1,136 @@
 /**
  * Clase encargada de manejar toda la persistencia del sistema.
- * 
+ *
  * Funciones:
  * - Guardar estado de la ciudad (autosave)
- * - Cargar ciudad guardada
+ * - Cargar ciudad guardada rehidratando clases
  * - Exportar ciudad a JSON
  * - Importar mapa desde TXT
  * - Guardar y cargar ranking local
  */
 
-class Persistence {
+import City from '../../models/City.js';
+import FileLoaderController from '../../src/Business/Controllers/FileLoaderController.js';
 
-    // Claves utilizadas dentro del localStorage
-    static CITY_KEY = "city_save";
-    static RANKING_KEY = "city_ranking";
+export default class Persistence {
+  static CITY_KEY = 'city_save';
+  static RANKING_KEY = 'city_ranking';
+  static MAP_KEY = 'city_last_map';
 
+  static saveCity(city) {
+    try {
+      const serializableCity = typeof city?.toJSON === 'function' ? city.toJSON() : city;
+      const cityJSON = JSON.stringify(serializableCity);
 
-    /**
-     * Guarda automáticamente la ciudad en localStorage
-     * (cumple HU-020 Autosave)
-     */
-    static saveCity(city) {
+      localStorage.setItem(Persistence.CITY_KEY, cityJSON);
+      console.log('Ciudad guardada correctamente');
 
-        try {
+      return true;
+    } catch (error) {
+      console.error('Error al guardar ciudad:', error);
+      return false;
+    }
+  }
 
-            const cityJSON = JSON.stringify(city);
+  static loadCity() {
+    try {
+      const cityJSON = localStorage.getItem(Persistence.CITY_KEY);
+      if (!cityJSON) {
+        console.log('No hay ciudad guardada');
+        return null;
+      }
 
-            localStorage.setItem(Persistence.CITY_KEY, cityJSON);
+      const raw = JSON.parse(cityJSON);
+      return City.fromJSON(raw);
+    } catch (error) {
+      console.error('Error al cargar ciudad:', error);
+      return null;
+    }
+  }
 
-            console.log("Ciudad guardada correctamente");
+  static clearCity() {
+    localStorage.removeItem(Persistence.CITY_KEY);
+  }
 
-        } catch (error) {
+  static exportCityJSON(city) {
+    const serializableCity = typeof city?.toJSON === 'function' ? city.toJSON() : city;
+    const data = JSON.stringify(serializableCity, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
 
-            console.error("Error al guardar ciudad:", error);
+    a.href = url;
+    a.download = 'city_export.json';
+    a.click();
 
-        }
+    URL.revokeObjectURL(url);
+    console.log('Ciudad exportada como JSON');
+  }
+
+  static async loadMapFromTXT(file, callback = null) {
+    const loadedMap = await FileLoaderController.loadFromFile(file);
+
+    Persistence.saveMapDefinition({
+      fileName: loadedMap.fileName,
+      width: loadedMap.metadata.width,
+      height: loadedMap.metadata.height,
+      stats: loadedMap.metadata.stats,
+      grid: loadedMap.serializableGrid,
+      content: loadedMap.content,
+    });
+
+    if (typeof callback === 'function') {
+      callback(loadedMap.serializableGrid, loadedMap);
     }
 
+    return loadedMap;
+  }
 
-    /**
-     * Carga la ciudad desde localStorage
-     */
-    static loadCity() {
-
-        try {
-
-            const cityJSON = localStorage.getItem(Persistence.CITY_KEY);
-
-            if (!cityJSON) {
-
-                console.log("No hay ciudad guardada");
-                return null;
-
-            }
-
-            return JSON.parse(cityJSON);
-
-        } catch (error) {
-
-            console.error("Error al cargar ciudad:", error);
-            return null;
-
-        }
+  static saveMapDefinition(mapDefinition) {
+    try {
+      localStorage.setItem(Persistence.MAP_KEY, JSON.stringify(mapDefinition));
+      return true;
+    } catch (error) {
+      console.error('Error al guardar mapa:', error);
+      return false;
     }
+  }
 
-
-    /**
-     * Exporta la ciudad a un archivo JSON descargable
-     * (cumple HU-021)
-     */
-    static exportCityJSON(city) {
-
-        const data = JSON.stringify(city, null, 2);
-
-        const blob = new Blob([data], { type: "application/json" });
-
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-
-        a.href = url;
-        a.download = "city_export.json";
-
-        a.click();
-
-        URL.revokeObjectURL(url);
-
-        console.log("Ciudad exportada como JSON");
+  static loadMapDefinition() {
+    try {
+      const mapJSON = localStorage.getItem(Persistence.MAP_KEY);
+      if (!mapJSON) return null;
+      return JSON.parse(mapJSON);
+    } catch (error) {
+      console.error('Error al cargar mapa:', error);
+      return null;
     }
+  }
 
-
-    /**
-     * Importa un mapa desde un archivo TXT
-     * (cumple HU-002)
-     */
-    static loadMapFromTXT(file, callback) {
-
-        const reader = new FileReader();
-
-        reader.onload = function (event) {
-
-            const text = event.target.result;
-
-            const rows = text.trim().split("\n");
-
-            const map = rows.map(row => row.trim().split(" "));
-
-            callback(map);
-        };
-
-        reader.readAsText(file);
+  static saveRanking(ranking) {
+    try {
+      const rankingJSON = JSON.stringify(ranking);
+      localStorage.setItem(Persistence.RANKING_KEY, rankingJSON);
+      console.log('Ranking guardado');
+      return true;
+    } catch (error) {
+      console.error('Error al guardar ranking:', error);
+      return false;
     }
+  }
 
-
-    /**
-     * Guarda el ranking local en localStorage
-     * (cumple HU-019)
-     */
-    static saveRanking(ranking) {
-
-        try {
-
-            const rankingJSON = JSON.stringify(ranking);
-
-            localStorage.setItem(Persistence.RANKING_KEY, rankingJSON);
-
-            console.log("Ranking guardado");
-
-        } catch (error) {
-
-            console.error("Error al guardar ranking:", error);
-
-        }
+  static loadRanking() {
+    try {
+      const rankingJSON = localStorage.getItem(Persistence.RANKING_KEY);
+      if (!rankingJSON) return [];
+      return JSON.parse(rankingJSON);
+    } catch (error) {
+      console.error('Error al cargar ranking:', error);
+      return [];
     }
+  }
+}
 
-
-    /**
-     * Carga el ranking desde localStorage
-     */
-    static loadRanking() {
-
-        try {
-
-            const rankingJSON = localStorage.getItem(Persistence.RANKING_KEY);
-
-            if (!rankingJSON) return [];
-
-            return JSON.parse(rankingJSON);
-
-        } catch (error) {
-
-            console.error("Error al cargar ranking:", error);
-
-            return [];
-
-        }
-    }
-
+if (typeof window !== 'undefined') {
+  window.Persistence = Persistence;
 }

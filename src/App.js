@@ -1,3 +1,5 @@
+import FileLoaderController from './Business/Controllers/FileLoaderController.js';
+
 // Cargar controladores
 const script = document.createElement('script');
 script.src = 'src/Business/Controllers/ConstructionMenuController.js';
@@ -15,28 +17,36 @@ window.addEventListener('buildModeChanged', (e) => {
     console.log('Modo de construcción:', e.detail.type);
 });
 
-// Permitir recibir el contenido del mapa personalizado desde el menú de inicio
-let customMapContent = null;
-window.addEventListener('startGame', (e) => {
-    if (e && e.detail && e.detail.mapContent) {
-        customMapContent = e.detail.mapContent;
+const startData = window.__CITY_BUILDER_START_DATA__ ?? null;
+let currentMapData = null;
+
+try {
+    if (startData?.parsedMap?.cells) {
+        currentMapData = startData.parsedMap;
+    } else if (startData?.mapContent) {
+        currentMapData = FileLoaderController.loadFromText(startData.mapContent, {
+            fileName: startData.fileName ?? 'mapa.txt',
+        }).parsed;
     }
-});
+} catch (error) {
+    console.error('No se pudo restaurar el mapa inicial:', error);
+}
+
+if (!currentMapData) {
+    currentMapData = buildDefaultMap(15, 15);
+}
 
 // CONFIGURACIÓN GLOBAL
 const tileWidth = 80;
 const tileHeight = 40;
-const gridSize = 15;
 
 function getMapSize() {
-    const width = (gridSize + gridSize) * (tileWidth / 2);
-    const height = (gridSize + gridSize) * (tileHeight / 2);
+    const width = (currentMapData.width + currentMapData.height) * (tileWidth / 2);
+    const height = (currentMapData.width + currentMapData.height) * (tileHeight / 2);
     return { width, height };
 }
 
 // ─── ESTADO DE CÁMARA ────────────────────────────────────────────────────────
-// offsetX/offsetY: desplazamiento en píxeles desde el centro del viewport
-// scale: zoom actual
 let camera = {
     offsetX: 0,
     offsetY: 0,
@@ -45,7 +55,6 @@ let camera = {
     maxScale: 3.0,
 };
 
-// Animación suave con lerp
 let anim = {
     offsetX: 0,
     offsetY: 0,
@@ -56,16 +65,12 @@ let anim = {
 let isDragging = false;
 let lastMouse = { x: 0, y: 0 };
 
-// ─── APLICAR TRANSFORM ────────────────────────────────────────────────────────
-// El map-camera está centrado con translate(-50%,-50%) en CSS,
-// así que solo necesitamos translate(offsetX, offsetY) + scale.
 function applyTransform(ox, oy, sc) {
     const cameraEl = document.querySelector('.map-camera');
     if (!cameraEl) return;
     cameraEl.style.transform = `translate(-50%, -50%) translate(${ox}px, ${oy}px) scale(${sc})`;
 }
 
-// ─── LOOP DE ANIMACIÓN ────────────────────────────────────────────────────────
 function startAnimLoop() {
     if (anim.running) return;
     anim.running = true;
@@ -102,7 +107,6 @@ function startAnimLoop() {
     requestAnimationFrame(tick);
 }
 
-// ─── CLAMP: no dejar salir el mapa del viewport ───────────────────────────────
 function clampOffset() {
     const viewport = document.querySelector('.map-viewport');
     if (!viewport) return;
@@ -111,11 +115,9 @@ function clampOffset() {
     const vw = viewport.clientWidth;
     const vh = viewport.clientHeight;
 
-    // El mapa escalado
     const sw = mapW * camera.scale;
     const sh = mapH * camera.scale;
 
-    // Margen: permite desplazar hasta que el borde del mapa llegue al centro del viewport
     const maxX = Math.max(0, (sw - vw) / 2 + vw * 0.25);
     const maxY = Math.max(0, (sh - vh) / 2 + vh * 0.25);
 
@@ -123,16 +125,14 @@ function clampOffset() {
     camera.offsetY = Math.max(-maxY, Math.min(maxY, camera.offsetY));
 }
 
-// ─── CENTRAR CÁMARA ───────────────────────────────────────────────────────────
 function centerCamera() {
-    // Calcular escala inicial para que el mapa llene cómodamente el viewport
     const viewport = document.querySelector('.map-viewport');
     let initialScale = 1;
     if (viewport) {
         const { width: mapW, height: mapH } = getMapSize();
         const scaleX = (viewport.clientWidth  * 0.85) / mapW;
         const scaleY = (viewport.clientHeight * 0.85) / mapH;
-        initialScale = Math.min(scaleX, scaleY, 1.0); // nunca mayor a 1 al inicio
+        initialScale = Math.min(scaleX, scaleY, 1.0);
         initialScale = Math.max(camera.minScale, initialScale);
     }
 
@@ -145,12 +145,10 @@ function centerCamera() {
     applyTransform(0, 0, initialScale);
 }
 
-// ─── CONTROLES ────────────────────────────────────────────────────────────────
 function setupCameraControls() {
     const viewport = document.querySelector('.map-viewport');
     if (!viewport) return;
 
-    // ZOOM con rueda — pivota en el cursor
     viewport.addEventListener('wheel', (e) => {
         e.preventDefault();
 
@@ -160,13 +158,10 @@ function setupCameraControls() {
 
         if (newScale === prevScale) return;
 
-        // Posición del cursor relativa al CENTRO del viewport
         const rect = viewport.getBoundingClientRect();
         const cursorX = e.clientX - rect.left - rect.width  / 2;
         const cursorY = e.clientY - rect.top  - rect.height / 2;
 
-        // Ajuste de offset para que el punto bajo el cursor no se mueva
-        // Fórmula: nuevoOffset = cursor - (cursor - offsetActual) * (newScale / prevScale)
         camera.offsetX = cursorX - (cursorX - camera.offsetX) * (newScale / prevScale);
         camera.offsetY = cursorY - (cursorY - camera.offsetY) * (newScale / prevScale);
         camera.scale   = newScale;
@@ -175,7 +170,6 @@ function setupCameraControls() {
         startAnimLoop();
     }, { passive: false });
 
-    // DRAG con mouse
     viewport.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
         isDragging = true;
@@ -198,7 +192,6 @@ function setupCameraControls() {
         viewport.style.cursor = '';
     });
 
-    // DRAG con touch (mobile)
     let lastTouch = null;
     let lastPinchDist = null;
 
@@ -231,7 +224,6 @@ function setupCameraControls() {
             const prevScale = camera.scale;
             camera.scale = Math.max(camera.minScale, Math.min(camera.maxScale, prevScale * ratio));
 
-            // Pivota en el centro del pinch
             const rect = viewport.getBoundingClientRect();
             const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left - rect.width  / 2;
             const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top  - rect.height / 2;
@@ -249,7 +241,6 @@ function setupCameraControls() {
         lastPinchDist = null;
     }, { passive: true });
 
-    // Recenter con doble click
     viewport.addEventListener('dblclick', () => {
         camera.offsetX = 0;
         camera.offsetY = 0;
@@ -258,35 +249,32 @@ function setupCameraControls() {
     });
 }
 
-// ─── RENDER DEL GRID ─────────────────────────────────────────────────────────
 function renderGrid() {
     const map = document.getElementById('city-map');
     if (!map) return;
 
     map.innerHTML = '';
 
-    // Si hay un mapa personalizado, úsalo aquí
-    if (customMapContent) {
-        // Aquí puedes procesar customMapContent para crear el mapa
-        // Por ahora solo lo mostramos en consola
-        console.log('Mapa personalizado cargado:', customMapContent);
-        // TODO: lógica para parsear y renderizar el mapa personalizado
-    }
-
-    const mapWidth  = (gridSize + gridSize) * (tileWidth  / 2);
-    const mapHeight = (gridSize + gridSize) * (tileHeight / 2);
+    const mapWidth  = (currentMapData.width + currentMapData.height) * (tileWidth  / 2);
+    const mapHeight = (currentMapData.width + currentMapData.height) * (tileHeight / 2);
 
     map.style.width  = mapWidth  + 'px';
     map.style.height = mapHeight + 'px';
 
     const centerX = mapWidth / 2;
 
-    for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
+    currentMapData.cells.forEach((row, y) => {
+        row.forEach((cellData, x) => {
             const cell = document.createElement('div');
-            cell.className  = 'city-cell';
+            cell.className  = `city-cell terrain-${cellData.type}`;
             cell.dataset.x  = x;
             cell.dataset.y  = y;
+            cell.dataset.token = cellData.token;
+
+            if (cellData.category) {
+                cell.dataset.category = cellData.category;
+                cell.classList.add(`building-${cellData.category}`);
+            }
 
             const isoX = (x - y) * (tileWidth  / 2);
             const isoY = (x + y) * (tileHeight / 2);
@@ -294,12 +282,57 @@ function renderGrid() {
             cell.style.left = (isoX + centerX - tileWidth / 2) + 'px';
             cell.style.top  = isoY + 'px';
 
+            if (cellData.type === 'building' && cellData.code) {
+                const label = document.createElement('span');
+                label.className = 'building-label';
+                label.textContent = cellData.code;
+                cell.appendChild(label);
+            }
+
             map.appendChild(cell);
-        }
-    }
+        });
+    });
+
+    console.log('Mapa cargado:', {
+        fileName: startData?.fileName ?? 'mapa por defecto',
+        width: currentMapData.width,
+        height: currentMapData.height,
+        stats: currentMapData.stats,
+    });
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
+function buildDefaultMap(width, height) {
+    const cells = Array.from({ length: height }, (_, y) =>
+        Array.from({ length: width }, (_, x) => ({
+            x,
+            y,
+            raw: 'g',
+            token: 'g',
+            valid: true,
+            type: 'grass',
+            code: null,
+            category: null,
+        })),
+    );
+
+    return {
+        valid: true,
+        errors: [],
+        warnings: [],
+        width,
+        height,
+        rows: Array.from({ length: height }, () => Array.from({ length: width }, () => 'g')),
+        cells,
+        stats: {
+            total: width * height,
+            grass: width * height,
+            road: 0,
+            building: 0,
+            buildingsByCode: {},
+        },
+    };
+}
+
 fetch('src/View/layouts/cityBuilderLayout.html')
     .then(res => res.text())
     .then(html => {

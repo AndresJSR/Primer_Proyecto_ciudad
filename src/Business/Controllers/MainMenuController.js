@@ -1,22 +1,20 @@
-// Controlador del menú de inicio para City Builder Game
-/* ===================================================
-   CITY BUILDER — Lógica del Menú de Inicio
-   =================================================== */
+import FileLoaderController from './FileLoaderController.js';
 
 (function () {
   'use strict';
 
-  // ── Elementos ──────────────────────────────────────
-  const selectMapBtn  = document.getElementById('select-map-btn');
-  const mapFileInput  = document.getElementById('map-file-input');
-  const playBtn       = document.getElementById('play-btn');
-  const fileInfoEl    = document.getElementById('file-info');
-  const mapNameBadge  = document.getElementById('map-name-badge');
+  const DEFAULT_MAP_PATH = 'assets/maps/sample.txt';
+
+  const selectMapBtn = document.getElementById('select-map-btn');
+  const mapFileInput = document.getElementById('map-file-input');
+  const playBtn = document.getElementById('play-btn');
+  const fileInfoEl = document.getElementById('file-info');
+  const mapNameBadge = document.getElementById('map-name-badge');
 
   let selectedFile = null;
+  let loadedMapData = null;
 
-  // ── Partículas de fondo ────────────────────────────
-  function spawnParticles () {
+  function spawnParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
 
@@ -26,19 +24,19 @@
       const p = document.createElement('div');
       p.className = 'particle';
 
-      const x    = Math.random() * 100;
-      const y    = 30 + Math.random() * 60;
-      const dur  = 5 + Math.random() * 7;
-      const delay= Math.random() * 8;
+      const x = Math.random() * 100;
+      const y = 30 + Math.random() * 60;
+      const dur = 5 + Math.random() * 7;
+      const delay = Math.random() * 8;
       const size = Math.random() > 0.7 ? 3 : 2;
 
       p.style.cssText = `
         left: ${x}%;
-        top:  ${y}%;
-        --dur:   ${dur}s;
+        top: ${y}%;
+        --dur: ${dur}s;
         --delay: ${delay}s;
-        width:   ${size}px;
-        height:  ${size}px;
+        width: ${size}px;
+        height: ${size}px;
         opacity: 0;
       `;
 
@@ -46,38 +44,54 @@
     }
   }
 
-  // ── Abrir selector de archivo ──────────────────────
-  selectMapBtn.addEventListener('click', () => {
-    mapFileInput.click();
-  });
+  function truncate(str, max) {
+    return str.length > max ? str.slice(0, max - 1) + '…' : str;
+  }
 
-  // ── Archivo seleccionado ───────────────────────────
-  mapFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  function resetSelection() {
+    selectedFile = null;
+    loadedMapData = null;
+    playBtn.disabled = true;
+    playBtn.classList.remove('ready');
+    mapNameBadge.textContent = '';
+    mapNameBadge.classList.remove('visible');
+  }
 
-    selectedFile = file;
+  function setError(message) {
+    resetSelection();
+    fileInfoEl.innerHTML = `
+      <span class="fi-icon">⚠</span>
+      <span class="fi-name">${message}</span>
+    `;
+  }
 
-    const sizekb = (file.size / 1024).toFixed(1);
-    const name   = truncate(file.name, 34);
+  function setSuccess(displayFile, mapData, sourceLabel = '') {
+    selectedFile = displayFile;
+    loadedMapData = mapData;
 
-    // Mostrar info del archivo
+    const sizekb = ((displayFile.size ?? 0) / 1024).toFixed(1);
+    const name = truncate(displayFile.name ?? mapData.fileName ?? 'mapa.txt', 34);
+    const { width, height, stats } = mapData.metadata;
+
     fileInfoEl.innerHTML = `
       <span class="fi-icon">✦</span>
       <span class="fi-name">${name}</span>
       <span class="fi-size">${sizekb} KB</span>
+      <span class="fi-size">${width}x${height}</span>
+      <span class="fi-size">${stats.road} vías</span>
+      <span class="fi-size">${stats.building} edificios</span>
+      ${sourceLabel ? `<span class="fi-size">${sourceLabel}</span>` : ''}
     `;
 
-    // Activar botón Jugar
     playBtn.disabled = false;
     playBtn.classList.add('ready');
 
-    // Badge con nombre corto
-    const shortName = file.name.replace(/\.txt$/i, '');
+    const shortName = (displayFile.name ?? mapData.fileName ?? 'mapa')
+      .replace(/\.txt$/i, '');
+
     mapNameBadge.textContent = truncate(shortName, 18);
     mapNameBadge.classList.add('visible');
 
-    // Pequeña animación de pulso en el botón Jugar
     playBtn.animate(
       [
         { transform: 'scale(1)' },
@@ -86,39 +100,68 @@
       ],
       { duration: 350, easing: 'ease-in-out' }
     );
-  });
-
-  // ── Jugar ──────────────────────────────────────────
-  playBtn.addEventListener('click', () => {
-    if (!selectedFile || playBtn.disabled) return;
-
-    // Emitir el evento startGame para integrarse con el flujo actual
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const mapContent = evt.target.result;
-      window.dispatchEvent(new CustomEvent('startGame', {
-        detail: { mapContent, fileName: selectedFile.name }
-      }));
-    };
-    reader.readAsText(selectedFile);
-
-    // Animación de salida (opcional demo)
-    const menu = document.getElementById('start-menu');
-    menu.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-    menu.style.opacity    = '0';
-    menu.style.transform  = 'scale(0.97) translateY(-12px)';
-  });
-
-  // ── Utilidad ───────────────────────────────────────
-  function truncate (str, max) {
-    return str.length > max ? str.slice(0, max - 1) + '…' : str;
   }
 
-  // ── Init ───────────────────────────────────────────
-  spawnParticles();
-})();
+  async function preloadProjectMap() {
+    try {
+      const mapData = await FileLoaderController.loadFromProject(DEFAULT_MAP_PATH);
 
-// Permitir inicialización explícita desde index.html
-window.initMainMenu = function() {
-  // No hace falta duplicar lógica, solo ejecuta el IIFE si no se ha ejecutado
-};
+      const projectFile = {
+        name: mapData.fileName,
+        size: mapData.fileSize ?? 0,
+      };
+
+      setSuccess(projectFile, mapData, 'mapa por defecto');
+      console.log('Mapa por defecto cargado:', mapData);
+    } catch (error) {
+      console.error('Error cargando mapa por defecto:', error);
+      setError(error.message);
+    }
+  }
+
+  if (selectMapBtn && mapFileInput) {
+    selectMapBtn.addEventListener('click', () => {
+      mapFileInput.click();
+    });
+
+    mapFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const mapData = await FileLoaderController.loadFromFile(file);
+        setSuccess(file, mapData, 'archivo seleccionado');
+        console.log('Mapa cargado desde archivo:', mapData);
+      } catch (error) {
+        console.error('Error cargando archivo:', error);
+        setError(error.message);
+      }
+    });
+  }
+
+  if (playBtn) {
+    playBtn.addEventListener('click', () => {
+      if (!selectedFile || !loadedMapData || playBtn.disabled) return;
+
+      window.dispatchEvent(new CustomEvent('startGame', {
+        detail: {
+          fileName: selectedFile.name,
+          mapContent: loadedMapData.content,
+          parsedMap: loadedMapData.parsed,
+          mapMetadata: loadedMapData.metadata,
+          serializableGrid: loadedMapData.serializableGrid,
+        }
+      }));
+
+      const menu = document.getElementById('start-menu');
+      if (menu) {
+        menu.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        menu.style.opacity = '0';
+        menu.style.transform = 'scale(0.97) translateY(-12px)';
+      }
+    });
+  }
+
+  spawnParticles();
+  preloadProjectMap();
+})();
