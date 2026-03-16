@@ -26,9 +26,6 @@ export default class Game {
     this.turnSystem = null;
   }
 
-  // =============================
-  // 🚀 Crear nueva ciudad / iniciar juego
-  // =============================
   createNewCity({
     nombreCiudad,
     nombreAlcalde,
@@ -38,8 +35,9 @@ export default class Game {
     ancho,
     alto,
     recursosIniciales = null,
+    mapa = null,
   }) {
-    const mapa = new Map(ancho, alto);
+    const cityMap = mapa instanceof Map ? mapa : new Map(ancho, alto);
 
     const city = new City({
       nombreCiudad,
@@ -49,7 +47,7 @@ export default class Game {
       longitud,
       ancho,
       alto,
-      mapa,
+      mapa: cityMap,
       recursosIniciales,
     });
 
@@ -57,9 +55,19 @@ export default class Game {
     return this.gameState;
   }
 
-  // =============================
-  // ▶️ Control del ciclo
-  // =============================
+  loadExistingCity({ city, config = null } = {}) {
+    if (!(city instanceof City)) {
+      throw new Error("Game.loadExistingCity: se requiere una instancia de City.");
+    }
+
+    if (config) {
+      this.config = config instanceof Config ? config : new Config(config);
+    }
+
+    this.#bootstrap(city);
+    return this.gameState;
+  }
+
   start() {
     this.#requireBootstrapped();
     this.turnSystem.start();
@@ -81,14 +89,10 @@ export default class Game {
   }
 
   tickOnce() {
-    // Útil para pruebas: ejecuta 1 turno sin esperar 10s
     this.#requireBootstrapped();
     this.turnSystem.tick();
   }
 
-  // =============================
-  // 🏗️ Acciones del jugador (delegadas)
-  // =============================
   buildRoad(x, y) {
     this.#requireBootstrapped();
     return this.buildingManager.buildRoad(x, y);
@@ -104,9 +108,6 @@ export default class Game {
     return this.buildingManager.demolish(x, y);
   }
 
-  // =============================
-  // 🔎 Lectura de estado (para UI)
-  // =============================
   getState() {
     this.#requireBootstrapped();
     return this.gameState;
@@ -117,14 +118,9 @@ export default class Game {
     return this.gameState.city;
   }
 
-  // =============================
-  // 🔧 Internos
-  // =============================
   #bootstrap(city) {
-    // 1) GameState
     this.gameState = new GameState({ city, config: this.config });
 
-    // 2) Managers (inyección de config)
     this.buildingManager = new BuildingManager(city);
 
     this.resourceManager = new ResourceManager(city, {
@@ -141,7 +137,6 @@ export default class Game {
 
     this.scoreManager = new ScoreManager(city);
 
-    // 3) TurnSystem
     this.turnSystem = new TurnSystem({
       gameState: this.gameState,
       resourceManager: this.resourceManager,
@@ -150,7 +145,46 @@ export default class Game {
       onTick: this.onTick,
     });
 
+    if (typeof city.recordResourceSnapshot === "function" && city.resourceHistory.length === 0) {
+      city.recordResourceSnapshot({
+        reason: "bootstrap",
+        production: this.#previewProduction(),
+        consumption: this.#previewConsumption(),
+      });
+    }
+
     return this.gameState;
+  }
+
+  #previewProduction() {
+    const acc = { money: 0, electricity: 0, water: 0, food: 0 };
+    for (const building of this.gameState?.city?.edificios ?? []) {
+      const production = building.production ?? {};
+      acc.money += Number(production.money ?? 0);
+      acc.electricity += Number(production.electricity ?? 0);
+      acc.water += Number(production.water ?? 0);
+      acc.food += Number(production.food ?? 0);
+    }
+    return acc;
+  }
+
+  #previewConsumption() {
+    const city = this.gameState?.city;
+    const acc = { money: 0, electricity: 0, water: 0, food: 0 };
+
+    for (const building of city?.edificios ?? []) {
+      const consumption = building.consumption ?? {};
+      acc.electricity += Number(consumption.electricity ?? 0);
+      acc.water += Number(consumption.water ?? 0);
+      acc.food += Number(consumption.food ?? 0);
+    }
+
+    const population = city?.ciudadanos?.length ?? 0;
+    acc.electricity += population * Number(this.config.citizenConsumption.electricity ?? 0);
+    acc.water += population * Number(this.config.citizenConsumption.water ?? 0);
+    acc.food += population * Number(this.config.citizenConsumption.food ?? 0);
+
+    return acc;
   }
 
   #requireBootstrapped() {

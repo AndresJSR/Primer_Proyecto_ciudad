@@ -113,12 +113,17 @@ class ModalController {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('#modal-overlay')) {
+function initModalController() {
+    if (document.querySelector('#modal-overlay') && !window.modalController) {
         window.modalController = new ModalController('#modal-overlay');
-        // Escuchar evento openModal
         document.addEventListener('openModal', e => {
             window.modalController.open(e.detail);
         });
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initModalController, { once: true });
+} else {
+    initModalController();
+}

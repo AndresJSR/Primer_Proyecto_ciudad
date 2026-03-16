@@ -23,7 +23,7 @@ export default class TurnSystem {
   }
 
   start() {
-    if (this._timerId !== null) return; // ya corriendo
+    if (this._timerId !== null) return;
     if (this.gameState.city.gameOver) return;
 
     this.gameState.start();
@@ -31,7 +31,6 @@ export default class TurnSystem {
     const tickMs = this.gameState.config.tickMs ?? 10000;
 
     this._timerId = setInterval(() => {
-      // Si está en pausa, no procesa turnos
       if (this.gameState.isPaused()) return;
       this.tick();
     }, tickMs);
@@ -57,48 +56,55 @@ export default class TurnSystem {
   tick() {
     const city = this.gameState.city;
 
-    // Si el juego terminó, parar
     if (city.gameOver) {
       this.stop();
       return;
     }
 
-    // 1) Avanzar turno
     city.incrementarTurno();
 
-    // 2) Recursos
     const resourcesReport = this.resourceManager.processTurn();
 
-    // Si recursos dispararon gameOver, parar
     if (city.gameOver) {
-      this.gameState.setLastTickReports({
+      const payload = {
         resourcesReport,
         citizensReport: null,
         scoreReport: null,
-      });
-      this.#emit({ resourcesReport, citizensReport: null, scoreReport: null });
+      };
+
+      this.#recordHistory(payload);
+      this.gameState.setLastTickReports(payload);
+      this.#emit(payload);
       this.stop();
       return;
     }
 
-    // 3) Ciudadanos (felicidad / crecimiento / asignaciones)
     const citizensReport = this.citizenManager.processTurn();
 
-    // 4) Score (si existe)
     const scoreReport =
       this.scoreManager && typeof this.scoreManager.processTurn === "function"
         ? this.scoreManager.processTurn()
         : null;
 
-    // 5) Guardar reportes en GameState
-    this.gameState.setLastTickReports({
-      resourcesReport,
-      citizensReport,
-      scoreReport,
-    });
+    const payload = { resourcesReport, citizensReport, scoreReport };
 
-    // 6) Emitir callback para UI
-    this.#emit({ resourcesReport, citizensReport, scoreReport });
+    this.#recordHistory(payload);
+    this.gameState.setLastTickReports(payload);
+    this.#emit(payload);
+  }
+
+  #recordHistory({ resourcesReport = null, scoreReport = null } = {}) {
+    const city = this.gameState.city;
+    if (typeof city.recordResourceSnapshot !== "function") return;
+
+    city.recordResourceSnapshot({
+      turn: city.turnoActual,
+      reason: city.gameOver ? "game-over" : "turn",
+      production: resourcesReport?.totalProduction ?? null,
+      consumption: resourcesReport?.totalConsumption ?? null,
+      score: scoreReport?.score ?? city.puntuacionAcumulada,
+      happiness: city.felicidadPromedio,
+    });
   }
 
   #emit(payload) {

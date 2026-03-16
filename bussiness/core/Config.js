@@ -1,7 +1,7 @@
 export default class Config {
   constructor({
     tickMs = 10000, // HU-014: turno cada 10s
-    autosaveMs = 30000, // HU-020: guardado cada 30s (tu compa lo usa)
+    autosaveMs = 30000, // HU-020: guardado cada 30s
     citizenConsumption = { electricity: 1, water: 1, food: 1 }, // X,Y,Z (UI)
     happiness = {
       base: 50,
@@ -11,8 +11,8 @@ export default class Config {
       growthPerTurn: { min: 1, max: 3 },
     },
   } = {}) {
-    this.tickMs = tickMs;
-    this.autosaveMs = autosaveMs;
+    this.tickMs = this.#num(tickMs, "tickMs");
+    this.autosaveMs = this.#num(autosaveMs, "autosaveMs");
 
     this.citizenConsumption = this.#validateConsumption(citizenConsumption);
 
@@ -43,6 +43,28 @@ export default class Config {
     }
   }
 
+  toJSON() {
+    return {
+      tickMs: this.tickMs,
+      autosaveMs: this.autosaveMs,
+      citizenConsumption: { ...this.citizenConsumption },
+      happiness: {
+        base: this.happiness.base,
+        bonusHasHome: this.happiness.bonusHasHome,
+        bonusHasJob: this.happiness.bonusHasJob,
+        growthThreshold: this.happiness.growthThreshold,
+        growthPerTurn: {
+          min: this.happiness.growthPerTurn.min,
+          max: this.happiness.growthPerTurn.max,
+        },
+      },
+    };
+  }
+
+  static fromJSON(obj = {}) {
+    return new Config(obj);
+  }
+
   #validateConsumption(obj) {
     if (!obj || typeof obj !== "object") {
       throw new Error("Config: citizenConsumption inválido.");
@@ -59,8 +81,9 @@ export default class Config {
 
   #num(v, field) {
     const n = Number(v);
-    if (Number.isNaN(n))
+    if (Number.isNaN(n)) {
       throw new Error(`Config: '${field}' debe ser numérico.`);
+    }
     return n;
   }
 

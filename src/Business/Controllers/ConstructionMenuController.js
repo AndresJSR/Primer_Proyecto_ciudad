@@ -90,9 +90,14 @@ class ConstructionMenuController {
     }
 }
 
-// Inicialización automática al cargar el layout
-window.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('#construction-menu')) {
+function initConstructionMenuController() {
+    if (document.querySelector('#construction-menu') && !window.constructionMenuController) {
         window.constructionMenuController = new ConstructionMenuController('#construction-menu');
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initConstructionMenuController, { once: true });
+} else {
+    initConstructionMenuController();
+}

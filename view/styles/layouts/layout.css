@@ -1,0 +1,146 @@
+/* ──────────────────────────────────────
+   WIDGETS EXTERNOS
+   ────────────────────────────────────── */
+.info-sidebar {
+  gap: 18px;
+  overflow-y: auto;
+}
+
+.info-widget {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(17, 24, 32, 0.88);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+
+.widget-frame {
+  backdrop-filter: blur(8px);
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.widget-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255,180,40,0.12);
+  font-size: 18px;
+}
+
+.widget-title {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.widget-content {
+  padding: 14px 16px 16px;
+}
+
+.weather-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.weather-temp {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.weather-condition,
+.weather-humidity,
+.weather-wind,
+.news-description,
+.news-meta {
+  color: var(--text-secondary);
+}
+
+.weather-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.news-item {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 12px;
+}
+
+.news-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.news-title {
+  margin: 0 0 8px;
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.news-image {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  object-fit: cover;
+  max-height: 140px;
+}
+
+.news-meta {
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.news-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #58a6ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.news-link:hover {
+  text-decoration: underline;
+}
+
+.widget-loading,
+.widget-error {
+  padding: 14px 16px 16px;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.loader {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.20);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: widget-spin 0.8s linear infinite;
+}
+
+@keyframes widget-spin {
+  to { transform: rotate(360deg); }
+}

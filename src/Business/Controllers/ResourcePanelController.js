@@ -109,8 +109,14 @@ class ResourcePanelController {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('#resource-panel')) {
+function initResourcePanelController() {
+    if (document.querySelector('#resource-panel') && !window.resourcePanelController) {
         window.resourcePanelController = new ResourcePanelController('#resource-panel');
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initResourcePanelController, { once: true });
+} else {
+    initResourcePanelController();
+}

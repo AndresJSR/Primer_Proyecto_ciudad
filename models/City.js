@@ -2,6 +2,7 @@ import Map from "./Map.js";
 import Resources from "./Resources.js";
 import Citizen from "./Citizen.js";
 import BuildingFactory from "../utils/BuildingFactory.js";
+
 export default class City {
   constructor({
     nombreCiudad,
@@ -14,12 +15,11 @@ export default class City {
     mapa,
     recursosIniciales,
   }) {
-    // 🔒 Validaciones estructurales
     this.#validarNombre(nombreCiudad, "Nombre de ciudad");
     this.#validarNombre(nombreAlcalde, "Nombre de alcalde");
     this.#validarCoordenadas(latitud, longitud);
     this.#validarDimensiones(ancho, alto);
-    // 👇 Nueva validación del mapa
+
     if (!(mapa instanceof Map)) {
       throw new Error("City: se requiere una instancia válida de Map.");
     }
@@ -29,7 +29,6 @@ export default class City {
       );
     }
 
-    // 📌 Datos básicos
     this.nombreCiudad = nombreCiudad;
     this.nombreAlcalde = nombreAlcalde;
     this.regionNombre = regionNombre;
@@ -43,14 +42,11 @@ export default class City {
     this.puntuacionAcumulada = 0;
     this.felicidadPromedio = 0;
 
-    // 🗺️ Territorio
     this.mapa = mapa;
 
-    // 🏗️ Colecciones
     this.edificios = [];
     this.ciudadanos = [];
 
-    // 💰 Recursos
     this.recursos = new Resources({
       money: recursosIniciales?.money ?? 50000,
       electricity: recursosIniciales?.electricity ?? 0,
@@ -58,14 +54,10 @@ export default class City {
       food: recursosIniciales?.food ?? 0,
     });
 
-    // 🛑 Estado del juego
     this.gameOver = false;
     this.motivoGameOver = null;
+    this.resourceHistory = [];
   }
-
-  // =============================
-  // 📊 Métodos básicos de consulta
-  // =============================
 
   getPoblacionTotal() {
     return this.ciudadanos.length;
@@ -84,10 +76,38 @@ export default class City {
     this.motivoGameOver = motivo;
   }
 
-  // =============================
-  // 🏗️ Métodos de modificación simple
-  // (Sin lógica pesada)
-  // =============================
+  clearGameOver() {
+    this.gameOver = false;
+    this.motivoGameOver = null;
+  }
+
+  recordResourceSnapshot({
+    turn = this.turnoActual,
+    reason = null,
+    production = null,
+    consumption = null,
+    score = this.puntuacionAcumulada,
+    happiness = this.felicidadPromedio,
+  } = {}) {
+    const snapshot = {
+      turn,
+      reason,
+      timestamp: new Date().toISOString(),
+      resources: this.recursos.toJSON(),
+      population: this.getPoblacionTotal(),
+      happiness,
+      score,
+      production,
+      consumption,
+    };
+
+    this.resourceHistory.push(snapshot);
+    if (this.resourceHistory.length > 20) {
+      this.resourceHistory = this.resourceHistory.slice(-20);
+    }
+
+    return snapshot;
+  }
 
   agregarEdificio(edificio) {
     this.edificios.push(edificio);
@@ -113,10 +133,6 @@ export default class City {
     this.puntuacionAcumulada = valor;
   }
 
-  // =============================
-  // 🔒 Validaciones privadas
-  // =============================
-
   #validarNombre(valor, campo) {
     if (!valor || typeof valor !== "string" || valor.trim().length === 0) {
       throw new Error(`${campo} inválido.`);
@@ -137,11 +153,13 @@ export default class City {
       throw new Error("El tamaño del mapa debe estar entre 15x15 y 30x30.");
     }
   }
+
   getHomeOccupancy(buildingId) {
     const b = this.edificios.find((e) => e.id === buildingId);
     if (!b) throw new Error("Edificio no encontrado.");
-    if (b.category !== "residential")
+    if (b.category !== "residential") {
       throw new Error("El edificio no es residencial.");
+    }
 
     const occupied = this.ciudadanos.filter(
       (c) => c.homeBuildingId === buildingId,
@@ -150,13 +168,16 @@ export default class City {
 
     return { occupied, free };
   }
+
   getResidentialBuildings() {
     return this.edificios.filter((e) => e.category === "residential");
   }
+
   hasFreeHousingSlot(buildingId) {
     const { free } = this.getHomeOccupancy(buildingId);
     return free > 0;
   }
+
   toJSON() {
     return {
       cityName: this.nombreCiudad,
@@ -167,36 +188,47 @@ export default class City {
       turn: this.turnoActual,
       score: this.puntuacionAcumulada,
       happiness: this.felicidadPromedio,
+      gameOver: this.gameOver,
+      gameOverReason: this.motivoGameOver,
+      resourceHistory: this.resourceHistory,
       map: this.mapa.toJSON(),
       resources: this.recursos.toJSON(),
       buildings: this.edificios.map((b) => (b.toJSON ? b.toJSON() : b)),
       citizens: this.ciudadanos.map((c) => (c.toJSON ? c.toJSON() : c)),
     };
   }
-static fromJSON(obj) {
-  if (!obj || typeof obj !== "object") throw new Error("City.fromJSON: objeto inválido.");
 
-  const mapa = Map.fromJSON(obj.map);
-  const city = new City({
-    nombreCiudad: obj.cityName,
-    nombreAlcalde: obj.mayor,
-    regionNombre: obj.regionNombre,
-    latitud: obj.coordinates?.lat,
-    longitud: obj.coordinates?.lon,
-    ancho: obj.gridSize?.width,
-    alto: obj.gridSize?.height,
-    mapa,
-    recursosIniciales: obj.resources
-  });
+  static fromJSON(obj) {
+    if (!obj || typeof obj !== "object") {
+      throw new Error("City.fromJSON: objeto inválido.");
+    }
 
-  city.turnoActual = obj.turn ?? 0;
-  city.puntuacionAcumulada = obj.score ?? 0;
-  city.felicidadPromedio = obj.happiness ?? 0;
+    const mapa = Map.fromJSON(obj.map);
+    const city = new City({
+      nombreCiudad: obj.cityName,
+      nombreAlcalde: obj.mayor,
+      regionNombre: obj.regionNombre,
+      latitud: obj.coordinates?.lat,
+      longitud: obj.coordinates?.lon,
+      ancho: obj.gridSize?.width,
+      alto: obj.gridSize?.height,
+      mapa,
+      recursosIniciales: obj.resources,
+    });
 
-  city.recursos = Resources.fromJSON(obj.resources ?? {});
-  city.edificios = (obj.buildings ?? []).map(b => BuildingFactory.fromJSON(b));
-  city.ciudadanos = (obj.citizens ?? []).map(c => Citizen.fromJSON(c));
+    city.turnoActual = obj.turn ?? 0;
+    city.puntuacionAcumulada = obj.score ?? 0;
+    city.felicidadPromedio = obj.happiness ?? 0;
+    city.gameOver = Boolean(obj.gameOver);
+    city.motivoGameOver = obj.gameOverReason ?? null;
 
-  return city;
-}
+    city.recursos = Resources.fromJSON(obj.resources ?? {});
+    city.edificios = (obj.buildings ?? []).map((b) => BuildingFactory.fromJSON(b));
+    city.ciudadanos = (obj.citizens ?? []).map((c) => Citizen.fromJSON(c));
+    city.resourceHistory = Array.isArray(obj.resourceHistory)
+      ? obj.resourceHistory.slice(-20)
+      : [];
+
+    return city;
+  }
 }

@@ -17,7 +17,7 @@ export default class Citizen {
   }
 
   // =============================
-  // ✅ Helpers simples
+  // Helpers simples
   // =============================
 
   hasHome() {
@@ -45,7 +45,7 @@ export default class Citizen {
   }
 
   // =============================
-  // 💾 Serialización
+  // Serialización
   // =============================
 
   toJSON() {
@@ -74,7 +74,7 @@ export default class Citizen {
   }
 
   // =============================
-  // 🔒 Privados
+  // Privados
   // =============================
 
   #requireString(v, field) {
