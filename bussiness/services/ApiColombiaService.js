@@ -1,4 +1,4 @@
-import PublicApiConfig from '../../config/PublicApiConfig.js';
+import PublicApiConfig from '../core/PublicApiconfig.js';
 
 export default class ApiColombiaService {
   static async getCities() {

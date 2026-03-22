@@ -1,6 +1,6 @@
-import PublicApiConfig from '../../config/PublicApiConfig.js';
-import OpenWeatherService from '../Services/OpenWeatherService.js';
-import NewsApiService from '../Services/NewsApiService.js';
+import PublicApiConfig from '../../../bussiness/core/PublicApiconfig.js';
+import OpenWeatherService from '../../../bussiness/services/WeatherService.js';
+import NewsApiService from '../../../bussiness/services/NewsService.js';
 
 export default class ExternalDataController {
   constructor({ getCityContext }) {

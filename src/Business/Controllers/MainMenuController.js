@@ -1,6 +1,6 @@
 import FileLoaderController from './FileLoaderController.js';
 import Persistence from '../../../bussiness/controllers/PersistenceManager.js';
-import ApiColombiaService from '../Services/ApiColombiaService.js';
+import ApiColombiaService from '../../../bussiness/services/ApiColombiaService.js';
 
 (function () {
   'use strict';

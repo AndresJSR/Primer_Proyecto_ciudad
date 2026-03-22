@@ -1,11 +1,15 @@
-class RoutingService {
+import { ApiService } from './APIService.js';
 
-    static async getRouting(origin, destination) {
+export default class RoutingService {
+    static async calculateRoute({ map, origin, destination }) {
+        if (!Array.isArray(map) || !origin || !destination) {
+            throw new Error('RoutingService: se requiere map, origin y destination.');
+        }
 
-        return await ApiService.request(
-            `/routes?origin=${origin}&destination=${destination}`
-        );
-
+        return ApiService.request('/calculate-route', {
+            method: 'POST',
+            body: JSON.stringify({ map, origin, destination }),
+        });
     }
 
 }

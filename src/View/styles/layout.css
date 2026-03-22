@@ -102,6 +102,53 @@ body {
   position: relative;
 }
 
+.map-tools {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(13, 21, 32, 0.88);
+  backdrop-filter: blur(4px);
+}
+
+.map-tool-btn {
+  border: 1px solid var(--border-accent);
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font: 600 0.88rem/1 var(--font-ui);
+  cursor: pointer;
+}
+
+.map-tool-btn:hover {
+  background: rgba(88, 166, 255, 0.2);
+}
+
+.map-tool-btn.active {
+  background: rgba(61, 255, 160, 0.18);
+  border-color: rgba(61, 255, 160, 0.45);
+}
+
+.map-tool-btn.secondary {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.map-tool-status {
+  margin-left: 4px;
+  color: var(--text-secondary);
+  font: 500 0.82rem/1.1 var(--font-ui);
+  max-width: 260px;
+}
+
 /* Vignette on map edges */
 .center::after {
   content: '';

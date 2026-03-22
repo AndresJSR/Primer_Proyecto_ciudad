@@ -5,6 +5,7 @@ import Persistence from '../bussiness/controllers/PersistenceManager.js';
 import CityMap from '../models/Map.js';
 import BuildingFactory from '../utils/BuildingFactory.js';
 import ExternalDataController from './Business/Controllers/ExternalDataController.js';
+import RoutingService from '../bussiness/services/RoutingService.js';
 
 const script = document.createElement('script');
 script.src = 'src/Business/Controllers/ConstructionMenuController.js';
@@ -58,6 +59,12 @@ let currentGame = null;
 let autosaveTimerId = null;
 let lastLoadedSnapshot = null;
 let externalDataController = null;
+let routeSelection = {
+  active: false,
+  origin: null,
+  destination: null,
+  path: [],
+};
 
 try {
   if (startData?.parsedMap?.cells) {
@@ -346,6 +353,138 @@ function renderGrid() {
     width: currentMapData.width,
     height: currentMapData.height,
     stats: currentMapData.stats,
+  });
+
+  renderRoutePath();
+}
+
+function setRouteStatus(message) {
+  const statusEl = document.getElementById('route-status');
+  if (statusEl) {
+    statusEl.textContent = message;
+  }
+}
+
+function clearRouteSelection({ keepMode = false } = {}) {
+  routeSelection = {
+    active: keepMode ? routeSelection.active : false,
+    origin: null,
+    destination: null,
+    path: [],
+  };
+
+  const routeBtn = document.getElementById('route-mode-btn');
+  if (routeBtn) {
+    routeBtn.classList.toggle('active', Boolean(routeSelection.active));
+  }
+}
+
+function renderRoutePath() {
+  const mapEl = document.getElementById('city-map');
+  if (!mapEl) return;
+
+  mapEl.querySelectorAll('.city-cell').forEach((cellEl) => {
+    cellEl.classList.remove('route-origin', 'route-destination', 'route-path');
+  });
+
+  for (const point of routeSelection.path ?? []) {
+    const selector = `.city-cell[data-x="${point.x}"][data-y="${point.y}"]`;
+    const cellEl = mapEl.querySelector(selector);
+    if (cellEl) {
+      cellEl.classList.add('route-path');
+    }
+  }
+
+  if (routeSelection.origin) {
+    const selector = `.city-cell[data-x="${routeSelection.origin.x}"][data-y="${routeSelection.origin.y}"]`;
+    const cellEl = mapEl.querySelector(selector);
+    if (cellEl) {
+      cellEl.classList.add('route-origin');
+    }
+  }
+
+  if (routeSelection.destination) {
+    const selector = `.city-cell[data-x="${routeSelection.destination.x}"][data-y="${routeSelection.destination.y}"]`;
+    const cellEl = mapEl.querySelector(selector);
+    if (cellEl) {
+      cellEl.classList.add('route-destination');
+    }
+  }
+}
+
+function buildRoadMatrix(city) {
+  return Array.from({ length: city.alto }, (_, y) =>
+    Array.from({ length: city.ancho }, (_, x) =>
+      city.mapa.getCell(x, y).isRoad() ? 1 : 0,
+    ),
+  );
+}
+
+async function calculateRouteAndRender() {
+  if (!currentGame || !routeSelection.origin || !routeSelection.destination) return;
+
+  const city = currentGame.getCity();
+  const mapMatrix = buildRoadMatrix(city);
+
+  setRouteStatus('Calculando ruta...');
+
+  try {
+    const response = await RoutingService.calculateRoute({
+      map: mapMatrix,
+      origin: routeSelection.origin,
+      destination: routeSelection.destination,
+    });
+
+    const route = Array.isArray(response?.route)
+      ? response.route
+      : Array.isArray(response)
+        ? response
+        : [];
+
+    if (!route.length) {
+      routeSelection.path = [];
+      renderRoutePath();
+      setRouteStatus('No hay ruta disponible entre estos edificios.');
+      return;
+    }
+
+    routeSelection.path = route;
+    renderRoutePath();
+    setRouteStatus(`Ruta calculada (${route.length} celdas).`);
+  } catch (error) {
+    console.error('Error calculando ruta:', error);
+    routeSelection.path = [];
+    renderRoutePath();
+    setRouteStatus('No se pudo calcular la ruta.');
+  }
+}
+
+function setupRouteControls() {
+  const routeBtn = document.getElementById('route-mode-btn');
+  const clearBtn = document.getElementById('clear-route-btn');
+
+  if (!routeBtn || !clearBtn) return;
+
+  routeBtn.addEventListener('click', () => {
+    const nextActive = !routeSelection.active;
+    clearRouteSelection({ keepMode: true });
+    routeSelection.active = nextActive;
+    routeBtn.classList.toggle('active', nextActive);
+
+    if (nextActive) {
+      window.constructionMenuController?.cancelBuildMode?.();
+      setRouteStatus('Selecciona edificio de origen.');
+    } else {
+      setRouteStatus('Modo ruta desactivado.');
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    clearRouteSelection({ keepMode: true });
+    renderRoutePath();
+    setRouteStatus(routeSelection.active
+      ? 'Ruta limpiada. Selecciona edificio de origen.'
+      : 'Ruta limpiada.');
   });
 }
 
@@ -695,12 +834,39 @@ function setupMapInteractions() {
   const mapEl = document.getElementById('city-map');
   if (!mapEl) return;
 
-  mapEl.addEventListener('click', (event) => {
+  mapEl.addEventListener('click', async (event) => {
     const cellEl = event.target.closest('.city-cell');
     if (!cellEl || !currentGame) return;
 
     const x = Number(cellEl.dataset.x);
     const y = Number(cellEl.dataset.y);
+
+    if (routeSelection.active) {
+      const modelCell = currentGame.getCity().mapa.getCell(x, y);
+      if (!modelCell.isBuilding()) {
+        setRouteStatus('Debes seleccionar un edificio como origen/destino.');
+        return;
+      }
+
+      if (!routeSelection.origin) {
+        routeSelection.origin = { x, y };
+        routeSelection.destination = null;
+        routeSelection.path = [];
+        renderRoutePath();
+        setRouteStatus('Origen seleccionado. Ahora selecciona edificio destino.');
+        return;
+      }
+
+      if (routeSelection.origin.x === x && routeSelection.origin.y === y) {
+        setRouteStatus('El destino debe ser diferente al origen.');
+        return;
+      }
+
+      routeSelection.destination = { x, y };
+      await calculateRouteAndRender();
+      return;
+    }
+
     const buildMode = window.constructionMenuController?.currentBuildMode ?? null;
 
     if (!buildMode) return;
@@ -770,6 +936,7 @@ fetch('src/View/layouts/cityBuilderLayout.html')
     centerCamera();
     setupCameraControls();
     setupMapInteractions();
+    setupRouteControls();
     renderResourcePanel();
     initExternalApis();
 
