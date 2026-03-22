@@ -572,12 +572,14 @@ function initializeGameSession() {
     const restoredGame = createGameFromSavedCity();
     if (restoredGame) {
       currentGame = restoredGame;
+      window.currentGame = currentGame;
       currentMapData = buildRenderableMapFromCity(currentGame.getCity());
       return;
     }
   }
 
   currentGame = createNewGameFromParsedMap(currentMapData);
+  window.currentGame = currentGame;
 
   if (
     startData?.serializableGrid ||
@@ -593,6 +595,8 @@ function initializeGameSession() {
       content: startData?.mapContent ?? null,
     });
   }
+  // Asegurar que currentGame esté en window para edición de recursos
+  window.currentGame = currentGame;
 }
 
 function createNewGameFromParsedMap(parsedMap) {
@@ -808,11 +812,28 @@ function buildResourcePayload() {
 }
 
 function renderResourcePanel() {
-  document.dispatchEvent(
-    new CustomEvent("resourcesUpdated", {
-      detail: buildResourcePayload(),
-    }),
-  );
+  // Forzar refresco de datos desde el objeto actual de la ciudad
+  if (window.currentGame) {
+    const city = window.currentGame.getCity();
+    document.dispatchEvent(
+      new CustomEvent("resourcesUpdated", {
+        detail: {
+          money: Number(city.recursos.money ?? 0),
+          electricity: {
+            production: city.edificios.reduce((acc, b) => acc + (b.production?.electricity ?? 0), 0),
+            consumption: city.edificios.reduce((acc, b) => acc + (b.consumption?.electricity ?? 0), 0)
+          },
+          water: {
+            production: city.edificios.reduce((acc, b) => acc + (b.production?.water ?? 0), 0),
+            consumption: city.edificios.reduce((acc, b) => acc + (b.consumption?.water ?? 0), 0)
+          },
+          food: Number(city.recursos.food ?? 0),
+          population: city.ciudadanos.length,
+          happiness: Number(city.felicidadPromedio ?? 0)
+        },
+      })
+    );
+  }
 }
 
 function recordResourceSnapshot({ reason, payload = null } = {}) {
@@ -949,7 +970,10 @@ function setupMapInteractions() {
     }
 
     if (!result?.ok) {
-      console.warn(result?.message ?? "No se pudo realizar la acción.");
+      if (result?.message) {
+        alert(result.message); // Feedback inmediato si no hay dinero o no se puede construir
+      }
+      renderResourcePanel(); // Siempre refrescar recursos
       return;
     }
 
@@ -988,16 +1012,226 @@ window.cityExternalApisDebug = {
   currentCity: () => getCurrentCityContext(),
 };
 
+// Habilitar edición de recursos desde el panel
+function setupResourceEditing() {
+  // Dinero
+  const moneyValue = document.getElementById('money-value');
+  const moneyInput = document.getElementById('money-input');
+  moneyValue.addEventListener('dblclick', () => {
+    moneyInput.value = Number(moneyValue.textContent.replace(/[^\d]/g, ''));
+    moneyValue.style.display = 'none';
+    moneyInput.style.display = '';
+    moneyInput.focus();
+  });
+  moneyInput.addEventListener('blur', saveMoneyEdit);
+  moneyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveMoneyEdit(); });
+  function saveMoneyEdit() {
+    const val = Math.max(0, Number(moneyInput.value));
+    if (window.currentGame) {
+      // Forzar actualización directa sobre el objeto recursos
+      const city = window.currentGame.getCity();
+      if (city.recursos && typeof city.recursos.money !== 'undefined') {
+        city.recursos.money = val;
+        // Forzar recálculo y refresco
+        renderResourcePanel();
+        saveNow('edit:money');
+      }
+    }
+    moneyValue.style.display = '';
+    moneyInput.style.display = 'none';
+  }
+
+  // Electricidad
+  const elecValue = document.getElementById('electricity-value');
+  const elecProdInput = document.getElementById('electricity-prod-input');
+  const elecConsInput = document.getElementById('electricity-cons-input');
+  elecValue.addEventListener('dblclick', () => {
+    const [prod, cons] = elecValue.textContent.split('/').map(s => Number(s.trim()));
+    elecProdInput.value = prod;
+    elecConsInput.value = cons;
+    elecValue.style.display = 'none';
+    elecProdInput.style.display = '';
+    elecConsInput.style.display = '';
+    elecProdInput.focus();
+  });
+  function saveElectricityEdit() {
+    const prod = Math.max(0, Number(elecProdInput.value));
+    const cons = Math.max(0, Number(elecConsInput.value));
+    if (window.currentGame) {
+      const city = window.currentGame.getCity();
+      // Sobrescribe producción/consumo de todos los edificios a modo demo
+      city.edificios.forEach(b => {
+        if (b.production) b.production.electricity = prod;
+        if (b.consumption) b.consumption.electricity = cons;
+      });
+      renderResourcePanel();
+      saveNow('edit:electricity');
+    }
+    elecValue.style.display = '';
+    elecProdInput.style.display = 'none';
+    elecConsInput.style.display = 'none';
+  }
+  elecProdInput.addEventListener('blur', saveElectricityEdit);
+  elecConsInput.addEventListener('blur', saveElectricityEdit);
+  elecProdInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveElectricityEdit(); });
+  elecConsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveElectricityEdit(); });
+
+  // Agua
+  const waterValue = document.getElementById('water-value');
+  const waterProdInput = document.getElementById('water-prod-input');
+  const waterConsInput = document.getElementById('water-cons-input');
+  waterValue.addEventListener('dblclick', () => {
+    const [prod, cons] = waterValue.textContent.split('/').map(s => Number(s.trim()));
+    waterProdInput.value = prod;
+    waterConsInput.value = cons;
+    waterValue.style.display = 'none';
+    waterProdInput.style.display = '';
+    waterConsInput.style.display = '';
+    waterProdInput.focus();
+  });
+  function saveWaterEdit() {
+    const prod = Math.max(0, Number(waterProdInput.value));
+    const cons = Math.max(0, Number(waterConsInput.value));
+    if (window.currentGame) {
+      const city = window.currentGame.getCity();
+      city.edificios.forEach(b => {
+        if (b.production) b.production.water = prod;
+        if (b.consumption) b.consumption.water = cons;
+      });
+      renderResourcePanel();
+      saveNow('edit:water');
+    }
+    waterValue.style.display = '';
+    waterProdInput.style.display = 'none';
+    waterConsInput.style.display = 'none';
+  }
+  waterProdInput.addEventListener('blur', saveWaterEdit);
+  waterConsInput.addEventListener('blur', saveWaterEdit);
+  waterProdInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveWaterEdit(); });
+  waterConsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveWaterEdit(); });
+
+  // Alimentos
+  const foodValue = document.getElementById('food-value');
+  const foodInput = document.getElementById('food-input');
+  foodValue.addEventListener('dblclick', () => {
+    foodInput.value = Number(foodValue.textContent);
+    foodValue.style.display = 'none';
+    foodInput.style.display = '';
+    foodInput.focus();
+  });
+  function saveFoodEdit() {
+    const val = Math.max(0, Number(foodInput.value));
+    if (window.currentGame) {
+      const city = window.currentGame.getCity();
+      if (city.recursos && typeof city.recursos.food !== 'undefined') {
+        city.recursos.food = val;
+        renderResourcePanel();
+        saveNow('edit:food');
+      }
+    }
+    foodValue.style.display = '';
+    foodInput.style.display = 'none';
+  }
+  foodInput.addEventListener('blur', saveFoodEdit);
+  foodInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveFoodEdit(); });
+
+  // Población
+  const popValue = document.getElementById('population-value');
+  const popInput = document.getElementById('population-input');
+  popValue.addEventListener('dblclick', () => {
+    popInput.value = Number(popValue.textContent);
+    popValue.style.display = 'none';
+    popInput.style.display = '';
+    popInput.focus();
+  });
+  function savePopEdit() {
+    const val = Math.max(0, Number(popInput.value));
+    if (window.currentGame) {
+      const city = window.currentGame.getCity();
+      // Forzar actualización de ciudadanos
+      if (Array.isArray(city.ciudadanos)) {
+        const diff = val - city.ciudadanos.length;
+        if (diff > 0) {
+          for (let i = 0; i < diff; i++) city.ciudadanos.push({});
+        } else if (diff < 0) {
+          city.ciudadanos.length = val;
+        }
+        renderResourcePanel();
+        saveNow('edit:population');
+      }
+    }
+    popValue.style.display = '';
+    popInput.style.display = 'none';
+  }
+  popInput.addEventListener('blur', savePopEdit);
+  popInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') savePopEdit(); });
+
+  // Felicidad
+  const hapValue = document.getElementById('happiness-value');
+  const hapInput = document.getElementById('happiness-input');
+  hapValue.addEventListener('dblclick', () => {
+    hapInput.value = Number(hapValue.textContent.replace(/[^\d]/g, ''));
+    hapValue.style.display = 'none';
+    hapInput.style.display = '';
+    hapInput.focus();
+  });
+  function saveHapEdit() {
+    const val = Math.max(0, Math.min(100, Number(hapInput.value)));
+    if (window.currentGame) {
+      const city = window.currentGame.getCity();
+      city.felicidadPromedio = val;
+      renderResourcePanel();
+      saveNow('edit:happiness');
+    }
+    hapValue.style.display = '';
+    hapInput.style.display = 'none';
+  }
+  hapInput.addEventListener('blur', saveHapEdit);
+  hapInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveHapEdit(); });
+}
+
+// Llamar después de renderizar el layout y el panel
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(setupResourceEditing, 500);
+} else {
+  window.addEventListener('DOMContentLoaded', () => setTimeout(setupResourceEditing, 500));
+}
+
 fetch("src/View/layouts/cityBuilderLayout.html")
   .then((res) => res.text())
   .then((html) => {
     document.getElementById("app").innerHTML = html;
 
+    // Inicializar menú de construcción después de cargar el layout
+    if (window.initConstructionMenuController) {
+      window.initConstructionMenuController();
+    } else if (typeof ConstructionMenuController !== 'undefined') {
+      window.constructionMenuController = new ConstructionMenuController('#construction-menu');
+    } else {
+      // Cargar el script si no está presente
+      const script = document.createElement('script');
+      script.src = "src/Business/Controllers/ConstructionMenuController.js";
+      script.onload = () => {
+        window.initConstructionMenuController && window.initConstructionMenuController();
+      };
+      document.body.appendChild(script);
+    }
+
     initializeGameSession();
     renderGrid();
     centerCamera();
     setupCameraControls();
-    setupMapInteractions();
+    // Esperar a que el menú de construcción esté listo antes de activar interacciones
+    function waitForConstructionMenuController(retries = 20) {
+      if (window.constructionMenuController) {
+        setupMapInteractions();
+      } else if (retries > 0) {
+        setTimeout(() => waitForConstructionMenuController(retries - 1), 100);
+      } else {
+        console.error("No se pudo inicializar el menú de construcción.");
+      }
+    }
+    waitForConstructionMenuController();
     setupRouteControls();
     renderResourcePanel();
     initExternalApis();

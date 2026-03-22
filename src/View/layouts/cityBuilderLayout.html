@@ -165,32 +165,40 @@
       <div class="resource money" data-tooltip="">
         <span class="icon money"></span>
         <span class="label">Dinero</span>
-        <span class="value" id="money-value">$0</span>
+        <span class="value" id="money-value" tabindex="0">$0</span>
+        <input type="number" class="edit-input" id="money-input" style="display:none;" min="0">
       </div>
       <div class="resource electricity" data-tooltip="">
         <span class="icon electricity"></span>
         <span class="label">Electricidad</span>
-        <span class="value" id="electricity-value">0 / 0</span>
+        <span class="value" id="electricity-value" tabindex="0">0 / 0</span>
+        <input type="number" class="edit-input" id="electricity-prod-input" style="display:none;" min="0" title="Producción">
+        <input type="number" class="edit-input" id="electricity-cons-input" style="display:none;" min="0" title="Consumo">
       </div>
       <div class="resource water" data-tooltip="">
         <span class="icon water"></span>
         <span class="label">Agua</span>
-        <span class="value" id="water-value">0 / 0</span>
+        <span class="value" id="water-value" tabindex="0">0 / 0</span>
+        <input type="number" class="edit-input" id="water-prod-input" style="display:none;" min="0" title="Producción">
+        <input type="number" class="edit-input" id="water-cons-input" style="display:none;" min="0" title="Consumo">
       </div>
       <div class="resource food" data-tooltip="">
         <span class="icon food"></span>
         <span class="label">Alimentos</span>
-        <span class="value" id="food-value">0</span>
+        <span class="value" id="food-value" tabindex="0">0</span>
+        <input type="number" class="edit-input" id="food-input" style="display:none;" min="0">
       </div>
       <div class="resource population" data-tooltip="">
         <span class="icon population"></span>
         <span class="label">Población</span>
-        <span class="value" id="population-value">0</span>
+        <span class="value" id="population-value" tabindex="0">0</span>
+        <input type="number" class="edit-input" id="population-input" style="display:none;" min="0">
       </div>
       <div class="resource happiness" data-tooltip="">
         <span class="icon happiness"></span>
         <span class="label">Felicidad</span>
-        <span class="value" id="happiness-value">0%</span>
+        <span class="value" id="happiness-value" tabindex="0">0%</span>
+        <input type="number" class="edit-input" id="happiness-input" style="display:none;" min="0" max="100">
       </div>
     </section>
   </aside>
