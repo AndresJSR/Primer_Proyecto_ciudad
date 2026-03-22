@@ -1,42 +1,69 @@
-import PublicApiConfig from '../../config/PublicApiConfig.js';
+import PublicApiConfig from '../core/PublicApiconfig.js';
 
-export default class NewsApiService {
+export default class NewsService {
   static async getTopHeadlines({ query = '', pageSize = 5 } = {}) {
-    if (!PublicApiConfig.newsApiKey) {
-      throw new Error('Falta configurar la API key de NewsAPI.');
+    const apiKey = String(PublicApiConfig.newsApiKey ?? '').trim();
+
+    if (!apiKey) {
+      throw new Error('Falta configurar newsApiKey.');
     }
 
-    const url = new URL(`${PublicApiConfig.newsApiBaseUrl}/top-headlines`);
-    url.searchParams.set('country', PublicApiConfig.newsCountry);
-    url.searchParams.set('pageSize', String(pageSize));
+    const normalizedQuery = String(query ?? '')
+      .replace(/\./g, '')
+      .trim();
 
-    if (query && query.trim()) {
-      url.searchParams.set('q', query.trim());
+    const primaryUrl = new URL(`${PublicApiConfig.newsApiBaseUrl}/top-headlines`);
+    primaryUrl.searchParams.set('apiKey', apiKey);
+    primaryUrl.searchParams.set('country', PublicApiConfig.newsCountry || 'co');
+    primaryUrl.searchParams.set('pageSize', String(pageSize));
+
+    if (normalizedQuery) {
+      primaryUrl.searchParams.set('q', normalizedQuery);
     }
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        'X-Api-Key': PublicApiConfig.newsApiKey,
-      },
-    });
+    const primaryResponse = await fetch(primaryUrl.toString());
 
-    if (!response.ok) {
-      throw new Error(`No se pudieron obtener noticias (${response.status}).`);
+    if (!primaryResponse.ok) {
+      throw new Error(`No se pudieron consultar noticias (${primaryResponse.status}).`);
     }
 
-    const data = await response.json();
+    const primaryData = await primaryResponse.json();
 
-    if (!Array.isArray(data.articles)) {
-      throw new Error('La respuesta de NewsAPI no contiene artículos válidos.');
+    if (Array.isArray(primaryData.articles) && primaryData.articles.length > 0) {
+      return primaryData.articles.map((article) => ({
+        title: article.title ?? 'Sin título',
+        description: article.description ?? 'Sin descripción',
+        sourceName: article.source?.name ?? 'Fuente desconocida',
+        articleUrl: article.url ?? '',
+        imageUrl: article.urlToImage ?? '',
+        publishedAt: article.publishedAt ?? '',
+        raw: article,
+      }));
     }
 
-    return data.articles.slice(0, pageSize).map((article) => ({
-      title: article.title ?? 'Sin título',
-      description: article.description ?? 'Sin descripción disponible.',
-      imageUrl: article.urlToImage ?? '',
-      articleUrl: article.url ?? '',
-      sourceName: article.source?.name ?? 'Fuente desconocida',
-      publishedAt: article.publishedAt ?? null,
-    }));
+    const fallbackUrl = new URL(`${PublicApiConfig.newsApiBaseUrl}/top-headlines`);
+    fallbackUrl.searchParams.set('apiKey', apiKey);
+    fallbackUrl.searchParams.set('country', PublicApiConfig.newsCountry || 'co');
+    fallbackUrl.searchParams.set('pageSize', String(pageSize));
+
+    const fallbackResponse = await fetch(fallbackUrl.toString());
+
+    if (!fallbackResponse.ok) {
+      throw new Error(`No se pudieron consultar noticias (${fallbackResponse.status}).`);
+    }
+
+    const fallbackData = await fallbackResponse.json();
+
+    return Array.isArray(fallbackData.articles)
+      ? fallbackData.articles.map((article) => ({
+          title: article.title ?? 'Sin título',
+          description: article.description ?? 'Sin descripción',
+          sourceName: article.source?.name ?? 'Fuente desconocida',
+          articleUrl: article.url ?? '',
+          imageUrl: article.urlToImage ?? '',
+          publishedAt: article.publishedAt ?? '',
+          raw: article,
+        }))
+      : [];
   }
 }

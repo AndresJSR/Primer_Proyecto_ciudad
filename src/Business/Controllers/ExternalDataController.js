@@ -1,17 +1,17 @@
-import PublicApiConfig from '../../config/PublicApiConfig.js';
-import OpenWeatherService from '../Services/OpenWeatherService.js';
-import NewsApiService from '../Services/NewsApiService.js';
+import PublicApiConfig from '../../../bussiness/core/PublicApiconfig.js';
+import OpenWeatherService from '../../../bussiness/services/WeatherService.js';
+import NewsApiService from '../../../bussiness/services/NewsService.js';
 
 export default class ExternalDataController {
   constructor({ getCityContext }) {
     this.getCityContext = getCityContext;
     this.intervalId = null;
-
-    this.weatherWidget = document.getElementById('weather-widget');
-    this.newsPanel = document.getElementById('news-panel');
+    this.weatherWidget = null;
+    this.newsPanel = null;
   }
 
   init() {
+    this.refreshBindings();
     this.refreshAll();
     this.startAutoRefresh();
   }
@@ -23,16 +23,24 @@ export default class ExternalDataController {
     }
   }
 
+  refreshBindings() {
+    this.weatherWidget = document.getElementById('weather-widget');
+    this.newsPanel = document.getElementById('news-panel');
+  }
+
   startAutoRefresh() {
     this.destroy();
+
     this.intervalId = window.setInterval(() => {
       this.refreshAll();
-    }, PublicApiConfig.cacheTtlMs);
+    }, Number(PublicApiConfig.cacheTtlMs ?? 1800000));
   }
 
   async refreshAll() {
     const city = this.getCityContext?.();
     if (!city) return;
+
+    this.refreshBindings();
 
     await Promise.allSettled([
       this.refreshWeather(city),
@@ -43,11 +51,11 @@ export default class ExternalDataController {
   async refreshWeather(city) {
     if (!this.weatherWidget) return;
 
-    this.#setWidgetState(this.weatherWidget, 'loading');
+    this.setWidgetState(this.weatherWidget, 'loading');
 
     try {
       const cacheKey = `weather:${city.name}:${city.lat}:${city.lon}`;
-      const cached = this.#getCache(cacheKey);
+      const cached = this.getCache(cacheKey);
 
       const weather = cached ?? await OpenWeatherService.getCurrentWeather({
         lat: city.lat,
@@ -55,35 +63,43 @@ export default class ExternalDataController {
       });
 
       if (!cached) {
-        this.#setCache(cacheKey, weather);
+        this.setCache(cacheKey, weather);
       }
 
-      this.weatherWidget.querySelector('.weather-temp').textContent = `${weather.temp}°C`;
-      this.weatherWidget.querySelector('.weather-condition').textContent = weather.condition;
-      this.weatherWidget.querySelector('.weather-humidity').textContent = `Humedad: ${weather.humidity}%`;
-      this.weatherWidget.querySelector('.weather-wind').textContent = `Viento: ${weather.windKmh} km/h`;
-
+      const tempEl = this.weatherWidget.querySelector('.weather-temp');
+      const conditionEl = this.weatherWidget.querySelector('.weather-condition');
+      const humidityEl = this.weatherWidget.querySelector('.weather-humidity');
+      const windEl = this.weatherWidget.querySelector('.weather-wind');
       const iconEl = this.weatherWidget.querySelector('.weather-icon');
-      iconEl.textContent = this.#resolveWeatherEmoji(weather.main);
 
-      this.#setWidgetState(this.weatherWidget, 'ready');
+      if (tempEl) tempEl.textContent = `${weather.temp}°C`;
+      if (conditionEl) conditionEl.textContent = weather.condition;
+      if (humidityEl) humidityEl.textContent = `Humedad: ${weather.humidity}%`;
+      if (windEl) windEl.textContent = `Viento: ${weather.windKmh} km/h`;
+      if (iconEl) iconEl.textContent = this.resolveWeatherEmoji(weather.main);
+
+      this.setWidgetState(this.weatherWidget, 'ready');
     } catch (error) {
       console.error('Error consultando clima:', error);
-      this.weatherWidget.querySelector('.widget-error .error-message').textContent =
-        error.message || 'No se pudo obtener el clima.';
-      this.#setWidgetState(this.weatherWidget, 'error');
+
+      const errorEl = this.weatherWidget.querySelector('.widget-error .error-message');
+      if (errorEl) {
+        errorEl.textContent = error.message || 'No se pudo obtener el clima.';
+      }
+
+      this.setWidgetState(this.weatherWidget, 'error');
     }
   }
 
   async refreshNews(city) {
     if (!this.newsPanel) return;
 
-    this.#setWidgetState(this.newsPanel, 'loading');
+    this.setWidgetState(this.newsPanel, 'loading');
 
     try {
       const query = city.departmentName || city.name || '';
       const cacheKey = `news:${PublicApiConfig.newsCountry}:${query}`;
-      const cached = this.#getCache(cacheKey);
+      const cached = this.getCache(cacheKey);
 
       const articles = cached ?? await NewsApiService.getTopHeadlines({
         query,
@@ -91,10 +107,14 @@ export default class ExternalDataController {
       });
 
       if (!cached) {
-        this.#setCache(cacheKey, articles);
+        this.setCache(cacheKey, articles);
       }
 
       const listEl = this.newsPanel.querySelector('.news-list');
+      if (!listEl) {
+        this.setWidgetState(this.newsPanel, 'ready');
+        return;
+      }
 
       if (!articles.length) {
         listEl.innerHTML = `
@@ -106,25 +126,29 @@ export default class ExternalDataController {
       } else {
         listEl.innerHTML = articles.map((article) => `
           <article class="news-item">
-            ${article.imageUrl ? `<img class="news-image" src="${article.imageUrl}" alt="${this.#escapeHtml(article.title)}">` : ''}
-            <h4 class="news-title">${this.#escapeHtml(article.title)}</h4>
-            <p class="news-description">${this.#escapeHtml(article.description)}</p>
-            <div class="news-meta">${this.#escapeHtml(article.sourceName)}</div>
+            ${article.imageUrl ? `<img class="news-image" src="${article.imageUrl}" alt="${this.escapeHtml(article.title)}">` : ''}
+            <h4 class="news-title">${this.escapeHtml(article.title)}</h4>
+            <p class="news-description">${this.escapeHtml(article.description)}</p>
+            <div class="news-meta">${this.escapeHtml(article.sourceName)}</div>
             ${article.articleUrl ? `<a class="news-link" href="${article.articleUrl}" target="_blank" rel="noopener noreferrer">Leer más</a>` : ''}
           </article>
         `).join('');
       }
 
-      this.#setWidgetState(this.newsPanel, 'ready');
+      this.setWidgetState(this.newsPanel, 'ready');
     } catch (error) {
       console.error('Error consultando noticias:', error);
-      this.newsPanel.querySelector('.widget-error .error-message').textContent =
-        error.message || 'No se pudieron obtener noticias.';
-      this.#setWidgetState(this.newsPanel, 'error');
+
+      const errorEl = this.newsPanel.querySelector('.widget-error .error-message');
+      if (errorEl) {
+        errorEl.textContent = error.message || 'No se pudieron obtener noticias.';
+      }
+
+      this.setWidgetState(this.newsPanel, 'error');
     }
   }
 
-  #setWidgetState(widgetEl, state) {
+  setWidgetState(widgetEl, state) {
     const content = widgetEl.querySelector('.widget-content');
     const loading = widgetEl.querySelector('.widget-loading');
     const error = widgetEl.querySelector('.widget-error');
@@ -150,7 +174,7 @@ export default class ExternalDataController {
     error.style.display = 'none';
   }
 
-  #resolveWeatherEmoji(main) {
+  resolveWeatherEmoji(main) {
     const normalized = String(main ?? '').toLowerCase();
 
     if (normalized.includes('clear')) return '☀️';
@@ -164,21 +188,22 @@ export default class ExternalDataController {
     return '🌤️';
   }
 
-  #setCache(key, value) {
+  setCache(key, value) {
     localStorage.setItem(key, JSON.stringify({
       savedAt: Date.now(),
       value,
     }));
   }
 
-  #getCache(key) {
+  getCache(key) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
 
       const parsed = JSON.parse(raw);
 
-      if (!parsed?.savedAt || (Date.now() - parsed.savedAt) > PublicApiConfig.cacheTtlMs) {
+      if (!parsed?.savedAt) return null;
+      if ((Date.now() - parsed.savedAt) > Number(PublicApiConfig.cacheTtlMs ?? 1800000)) {
         return null;
       }
 
@@ -188,7 +213,7 @@ export default class ExternalDataController {
     }
   }
 
-  #escapeHtml(text) {
+  escapeHtml(text) {
     return String(text ?? '')
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')

@@ -1,33 +1,25 @@
-import Citizen from "../../models/Citizen.js";
+import Citizen from '../../models/Citizen.js';
 
 export default class CitizenManager {
   constructor(city, config = {}) {
-    if (!city) throw new Error("CitizenManager requiere una ciudad.");
+    if (!city) throw new Error('CitizenManager requiere una ciudad.');
     this.city = city;
 
-    // Configurable (si el doc no da números exactos)
     this.baseHappiness = config.baseHappiness ?? 50;
     this.bonusHasHome = config.bonusHasHome ?? 10;
     this.bonusHasJob = config.bonusHasJob ?? 10;
-
-    // Crecimiento por turno
     this.growthMin = config.growthPerTurn?.min ?? 1;
     this.growthMax = config.growthPerTurn?.max ?? 3;
-
-    // Umbral típico del documento
     this.growthHappinessThreshold = config.growthHappinessThreshold ?? 60;
   }
 
   processTurn() {
-    // 1) Intentar asignar vivienda y empleo a los existentes
     this.assignHomes();
     this.assignJobs();
 
-    // 2) Recalcular felicidad y promedio
     const avg = this.recalculateHappiness();
     this.city.actualizarFelicidadPromedio(avg);
 
-    // 3) Crecimiento poblacional
     const created = this.tryPopulationGrowth(avg);
 
     return {
@@ -37,9 +29,6 @@ export default class CitizenManager {
     };
   }
 
-  // =========================
-  // 🏠 Vivienda
-  // =========================
   assignHomes() {
     const homes = this.city.getResidentialBuildings();
 
@@ -60,9 +49,6 @@ export default class CitizenManager {
     return null;
   }
 
-  // =========================
-  // 💼 Empleo
-  // =========================
   assignJobs() {
     const jobBuildings = this.#getJobBuildings();
 
@@ -78,7 +64,7 @@ export default class CitizenManager {
 
   #getJobBuildings() {
     return this.city.edificios.filter(
-      (b) => b.category === "commercial" || b.category === "industrial",
+      (b) => b.category === 'commercial' || b.category === 'industrial',
     );
   }
 
@@ -98,13 +84,12 @@ export default class CitizenManager {
     return null;
   }
 
-  // =========================
-  // 🙂 Felicidad
-  // =========================
   recalculateHappiness() {
     const globalBonus = this.#globalHappinessBonus();
 
-    if (this.city.ciudadanos.length === 0) return 0;
+    if (this.city.ciudadanos.length === 0) {
+      return this.#clamp(this.baseHappiness + globalBonus, 0, 100);
+    }
 
     let sum = 0;
 
@@ -127,8 +112,7 @@ export default class CitizenManager {
     let bonus = 0;
 
     for (const b of this.city.edificios) {
-      // Services + Parks dan felicidad global según doc
-      if (b.category === "service" || b.category === "park") {
+      if (b.category === 'service' || b.category === 'park') {
         bonus += Number(b.happinessBonus ?? 0);
       }
     }
@@ -136,19 +120,21 @@ export default class CitizenManager {
     return bonus;
   }
 
-  // =========================
-  // 👶 Crecimiento poblacional
-  // =========================
   tryPopulationGrowth(avgHappiness) {
-    if (avgHappiness <= this.growthHappinessThreshold) return 0;
-
-    // Requiere vivienda disponible y empleo disponible
     if (!this.#hasAnyHousingSpace()) return 0;
     if (!this.#hasAnyJobSpace()) return 0;
 
-    const n = this.#randInt(this.growthMin, this.growthMax);
+    if (this.city.ciudadanos.length === 0) {
+      return this.#createCitizens(1);
+    }
 
-    for (let i = 0; i < n; i++) {
+    if (avgHappiness < this.growthHappinessThreshold) return 0;
+
+    return this.#createCitizens(this.#randInt(this.growthMin, this.growthMax));
+  }
+
+  #createCitizens(amount) {
+    for (let i = 0; i < amount; i++) {
       const citizen = new Citizen({
         id: crypto.randomUUID(),
         felicidad: this.baseHappiness,
@@ -159,12 +145,9 @@ export default class CitizenManager {
       this.city.agregarCiudadano(citizen);
     }
 
-    // Después de crear, intentar asignarles hogar y trabajo
     this.assignHomes();
     this.assignJobs();
-
-    // Solo contamos los creados (aunque alguno quede sin asignación)
-    return n;
+    return amount;
   }
 
   #hasAnyHousingSpace() {
@@ -180,9 +163,6 @@ export default class CitizenManager {
     });
   }
 
-  // =========================
-  // 🔧 Utils
-  // =========================
   #randInt(min, max) {
     const lo = Math.ceil(min);
     const hi = Math.floor(max);

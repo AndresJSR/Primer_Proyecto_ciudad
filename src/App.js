@@ -6,17 +6,11 @@ import CityMap from '../models/Map.js';
 import BuildingFactory from '../utils/BuildingFactory.js';
 import ExternalDataController from './Business/Controllers/ExternalDataController.js';
 
-const script = document.createElement('script');
-script.src = 'src/Business/Controllers/ConstructionMenuController.js';
-document.head.appendChild(script);
-
-const resourcePanelScript = document.createElement('script');
-resourcePanelScript.src = 'src/Business/Controllers/ResourcePanelController.js';
-document.head.appendChild(resourcePanelScript);
-
-const modalScript = document.createElement('script');
-modalScript.src = 'src/Business/Controllers/ModalController.js';
-document.head.appendChild(modalScript);
+const UI_CONTROLLER_SCRIPTS = [
+  'src/Business/Controllers/ConstructionMenuController.js',
+  'src/Business/Controllers/ResourcePanelController.js',
+  'src/Business/Controllers/ModalController.js',
+];
 
 window.addEventListener('buildModeChanged', (e) => {
   console.log('Modo de construcción:', e.detail.type);
@@ -30,12 +24,6 @@ const DEFAULT_CITY_META = {
   regionNombre: DEFAULT_CITY_CONTEXT.departmentName,
   latitud: DEFAULT_CITY_CONTEXT.lat,
   longitud: DEFAULT_CITY_CONTEXT.lon,
-  recursosIniciales: {
-    money: 50000,
-    electricity: 0,
-    water: 0,
-    food: 0,
-  },
 };
 
 const BUILD_MODE_TO_CODE = {
@@ -84,6 +72,88 @@ function normalizeCityContext(cityContext) {
     departmentName: cityContext?.departmentName ?? 'Bogotá D.C.',
     lat: Number.isFinite(Number(cityContext?.lat)) ? Number(cityContext.lat) : 4.60971,
     lon: Number.isFinite(Number(cityContext?.lon)) ? Number(cityContext.lon) : -74.08175,
+  };
+}
+
+function appendClassicScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    const existing = [...document.querySelectorAll('script')].find((script) => script.getAttribute('src') === src);
+    if (existing) {
+      resolve(existing);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(script);
+    script.onerror = () => reject(new Error(`No se pudo cargar el script ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureUiControllersLoaded() {
+  await Promise.all(UI_CONTROLLER_SCRIPTS.map((src) => appendClassicScriptOnce(src)));
+}
+
+function initializeUiControllers() {
+  window.initConstructionMenuController?.();
+  window.initResourcePanelController?.();
+  window.initModalController?.();
+  window.dispatchEvent(new CustomEvent('cityBuilderLayoutReady'));
+}
+
+function calculateBootstrapResources(parsedMap) {
+  const baseResources = {
+    money: 50000,
+    electricity: 0,
+    water: 0,
+    food: 0,
+  };
+
+  const buildingTotals = {
+    cost: 0,
+    consumption: { electricity: 0, water: 0, food: 0 },
+    production: { electricity: 0, water: 0, food: 0 },
+  };
+
+  let roadCount = 0;
+
+  for (const row of parsedMap.cells) {
+    for (const cell of row) {
+      if (cell.type === 'road') {
+        roadCount += 1;
+        continue;
+      }
+
+      if (cell.type === 'building' && cell.code) {
+        const building = BuildingFactory.fromJSON({
+          id: `bootstrap-${cell.x}-${cell.y}`,
+          code: cell.code,
+          x: cell.x,
+          y: cell.y,
+        });
+
+        buildingTotals.cost += Number(building.cost ?? 0);
+        buildingTotals.consumption.electricity += Number(building.consumption?.electricity ?? 0);
+        buildingTotals.consumption.water += Number(building.consumption?.water ?? 0);
+        buildingTotals.consumption.food += Number(building.consumption?.food ?? 0);
+        buildingTotals.production.electricity += Number(building.production?.electricity ?? 0);
+        buildingTotals.production.water += Number(building.production?.water ?? 0);
+        buildingTotals.production.food += Number(building.production?.food ?? 0);
+      }
+    }
+  }
+
+  const emergencyTurns = 5;
+  const electricityDeficit = Math.max(0, buildingTotals.consumption.electricity - buildingTotals.production.electricity);
+  const waterDeficit = Math.max(0, buildingTotals.consumption.water - buildingTotals.production.water);
+  const foodDeficit = Math.max(0, buildingTotals.consumption.food - buildingTotals.production.food);
+
+  return {
+    money: Math.max(0, baseResources.money - buildingTotals.cost - (roadCount * 100)),
+    electricity: electricityDeficit * emergencyTurns,
+    water: waterDeficit * emergencyTurns,
+    food: foodDeficit * emergencyTurns,
   };
 }
 
@@ -258,43 +328,28 @@ function setupCameraControls() {
     e.preventDefault();
 
     if (e.touches.length === 1 && lastTouch) {
-      camera.offsetX += e.touches[0].clientX - lastTouch.x;
-      camera.offsetY += e.touches[0].clientY - lastTouch.y;
-      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const touch = e.touches[0];
+      camera.offsetX += touch.clientX - lastTouch.x;
+      camera.offsetY += touch.clientY - lastTouch.y;
+      lastTouch = { x: touch.clientX, y: touch.clientY };
       clampOffset();
       startAnimLoop();
-    } else if (e.touches.length === 2 && lastPinchDist !== null) {
+      return;
+    }
+
+    if (e.touches.length === 2 && lastPinchDist) {
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY,
       );
-      const ratio = dist / lastPinchDist;
-      const prevScale = camera.scale;
-      camera.scale = Math.max(camera.minScale, Math.min(camera.maxScale, prevScale * ratio));
 
-      const rect = viewport.getBoundingClientRect();
-      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left - rect.width / 2;
-      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top - rect.height / 2;
-      camera.offsetX = cx - (cx - camera.offsetX) * (camera.scale / prevScale);
-      camera.offsetY = cy - (cy - camera.offsetY) * (camera.scale / prevScale);
-
+      const factor = dist / lastPinchDist;
+      camera.scale = Math.max(camera.minScale, Math.min(camera.maxScale, camera.scale * factor));
       lastPinchDist = dist;
       clampOffset();
       startAnimLoop();
     }
   }, { passive: false });
-
-  viewport.addEventListener('touchend', () => {
-    lastTouch = null;
-    lastPinchDist = null;
-  }, { passive: true });
-
-  viewport.addEventListener('dblclick', () => {
-    camera.offsetX = 0;
-    camera.offsetY = 0;
-    clampOffset();
-    startAnimLoop();
-  });
 }
 
 function renderGrid() {
@@ -418,6 +473,7 @@ function createNewGameFromParsedMap(parsedMap) {
     ...DEFAULT_CITY_META,
     ancho: parsedMap.width,
     alto: parsedMap.height,
+    recursosIniciales: calculateBootstrapResources(parsedMap),
   });
 
   const city = game.getCity();
@@ -545,6 +601,8 @@ function buildRenderableMapFromCity(city) {
     cells.push(row);
   }
 
+  const flatCells = cells.flat();
+
   return {
     valid: true,
     errors: [],
@@ -555,10 +613,10 @@ function buildRenderableMapFromCity(city) {
     cells,
     stats: {
       total: city.ancho * city.alto,
-      grass: cells.flat().filter((c) => c.type === 'grass').length,
-      road: cells.flat().filter((c) => c.type === 'road').length,
-      building: cells.flat().filter((c) => c.type === 'building').length,
-      buildingsByCode: cells.flat().reduce((acc, c) => {
+      grass: flatCells.filter((c) => c.type === 'grass').length,
+      road: flatCells.filter((c) => c.type === 'road').length,
+      building: flatCells.filter((c) => c.type === 'building').length,
+      buildingsByCode: flatCells.reduce((acc, c) => {
         if (c.code) acc[c.code] = (acc[c.code] ?? 0) + 1;
         return acc;
       }, {}),
@@ -579,35 +637,23 @@ function buildResourcePayload() {
   }
 
   const city = currentGame.getCity();
-  const config = currentGame.config;
-
-  const production = { electricity: 0, water: 0 };
-  const consumption = { electricity: 0, water: 0 };
-
-  for (const building of city.edificios) {
-    production.electricity += Number(building.production?.electricity ?? 0);
-    production.water += Number(building.production?.water ?? 0);
-    consumption.electricity += Number(building.consumption?.electricity ?? 0);
-    consumption.water += Number(building.consumption?.water ?? 0);
-  }
-
-  const population = city.getPoblacionTotal();
-  consumption.electricity += population * Number(config.citizenConsumption?.electricity ?? 0);
-  consumption.water += population * Number(config.citizenConsumption?.water ?? 0);
+  const preview = typeof currentGame.resourceManager?.previewTurn === 'function'
+    ? currentGame.resourceManager.previewTurn()
+    : null;
 
   return {
     money: Number(city.recursos.money ?? 0),
     electricity: {
-      production: production.electricity,
-      consumption: consumption.electricity,
+      production: Number(preview?.totalProduction?.electricity ?? 0),
+      consumption: Number(preview?.totalConsumption?.electricity ?? 0),
     },
     water: {
-      production: production.water,
-      consumption: consumption.water,
+      production: Number(preview?.totalProduction?.water ?? 0),
+      consumption: Number(preview?.totalConsumption?.water ?? 0),
     },
     food: Number(city.recursos.food ?? 0),
-    population,
-    happiness: Number(city.felicidadPromedio ?? 0),
+    population: city.getPoblacionTotal(),
+    happiness: Math.round(Number(city.felicidadPromedio ?? 0)),
   };
 }
 
@@ -760,11 +806,18 @@ window.cityExternalApisDebug = {
   currentCity: () => getCurrentCityContext(),
 };
 
-fetch('src/View/layouts/cityBuilderLayout.html')
-  .then((res) => res.text())
-  .then((html) => {
+async function bootstrapApplication() {
+  try {
+    const response = await fetch('src/View/layouts/cityBuilderLayout.html');
+    if (!response.ok) {
+      throw new Error('No se pudo cargar la interfaz principal.');
+    }
+
+    const html = await response.text();
     document.getElementById('app').innerHTML = html;
 
+    await ensureUiControllersLoaded();
+    initializeUiControllers();
     initializeGameSession();
     renderGrid();
     centerCamera();
@@ -782,7 +835,9 @@ fetch('src/View/layouts/cityBuilderLayout.html')
     window.addEventListener('beforeunload', () => {
       saveNow('beforeunload');
     });
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error('No se pudo cargar la interfaz principal:', error);
-  });
+  }
+}
+
+bootstrapApplication();

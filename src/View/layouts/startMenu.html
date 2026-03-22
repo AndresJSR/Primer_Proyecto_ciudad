@@ -1,110 +1,91 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>City Builder</title>
-  <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-</head>
-<body>
+<div class="scene">
+  <div class="skyline">
+    <svg viewBox="0 0 1400 300" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="160" width="60" height="140" rx="2"/>
+      <rect x="50" y="110" width="40" height="190" rx="2"/>
+      <rect x="80" y="130" width="70" height="170" rx="2"/>
+      <rect x="140" y="80" width="35" height="220" rx="2"/>
+      <rect x="165" y="50" width="20" height="250" rx="2"/>
+      <rect x="180" y="90" width="55" height="210" rx="2"/>
+      <rect x="225" y="120" width="45" height="180" rx="2"/>
+      <rect x="260" y="60" width="30" height="240" rx="2"/>
+      <rect x="280" y="100" width="60" height="200" rx="2"/>
+      <rect x="330" y="140" width="50" height="160" rx="2"/>
+      <rect x="370" y="70" width="40" height="230" rx="2"/>
+      <rect x="400" y="110" width="55" height="190" rx="2"/>
+      <rect x="445" y="30" width="25" height="270" rx="2"/>
+      <rect x="460" y="80" width="70" height="220" rx="2"/>
+      <rect x="520" y="120" width="40" height="180" rx="2"/>
+      <rect x="550" y="55" width="35" height="245" rx="2"/>
+      <rect x="575" y="90" width="60" height="210" rx="2"/>
+      <rect x="625" y="130" width="45" height="170" rx="2"/>
+      <rect x="660" y="65" width="30" height="235" rx="2"/>
+      <rect x="680" y="100" width="65" height="200" rx="2"/>
+      <rect x="735" y="40" width="35" height="260" rx="2"/>
+      <rect x="760" y="115" width="50" height="185" rx="2"/>
+      <rect x="800" y="80" width="40" height="220" rx="2"/>
+      <rect x="830" y="145" width="55" height="155" rx="2"/>
+      <rect x="875" y="60" width="30" height="240" rx="2"/>
+      <rect x="895" y="95" width="70" height="205" rx="2"/>
+      <rect x="955" y="125" width="45" height="175" rx="2"/>
+      <rect x="990" y="50" width="35" height="250" rx="2"/>
+      <rect x="1015" y="105" width="60" height="195" rx="2"/>
+      <rect x="1065" y="70" width="40" height="230" rx="2"/>
+      <rect x="1095" y="140" width="50" height="160" rx="2"/>
+      <rect x="1135" y="85" width="30" height="215" rx="2"/>
+      <rect x="1155" y="45" width="55" height="255" rx="2"/>
+      <rect x="1200" y="110" width="45" height="190" rx="2"/>
+      <rect x="1235" y="65" width="35" height="235" rx="2"/>
+      <rect x="1260" y="130" width="60" height="170" rx="2"/>
+      <rect x="1310" y="90" width="40" height="210" rx="2"/>
+      <rect x="1340" y="55" width="60" height="245" rx="2"/>
+    </svg>
+  </div>
 
-  <div class="scene">
-    <!-- Skyline decorativa de fondo -->
-    <div class="skyline">
-      <svg viewBox="0 0 1400 300" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
-        <!-- edificios traseros -->
-        <rect x="0"   y="160" width="60"  height="140" rx="2"/>
-        <rect x="50"  y="110" width="40"  height="190" rx="2"/>
-        <rect x="80"  y="130" width="70"  height="170" rx="2"/>
-        <rect x="140" y="80"  width="35"  height="220" rx="2"/>
-        <rect x="165" y="50"  width="20"  height="250" rx="2"/>
-        <rect x="180" y="90"  width="55"  height="210" rx="2"/>
-        <rect x="225" y="120" width="45"  height="180" rx="2"/>
-        <rect x="260" y="60"  width="30"  height="240" rx="2"/>
-        <rect x="280" y="100" width="60"  height="200" rx="2"/>
-        <rect x="330" y="140" width="50"  height="160" rx="2"/>
-        <rect x="370" y="70"  width="40"  height="230" rx="2"/>
-        <rect x="400" y="110" width="55"  height="190" rx="2"/>
-        <rect x="445" y="30"  width="25"  height="270" rx="2"/>
-        <rect x="460" y="80"  width="70"  height="220" rx="2"/>
-        <rect x="520" y="120" width="40"  height="180" rx="2"/>
-        <rect x="550" y="55"  width="35"  height="245" rx="2"/>
-        <rect x="575" y="90"  width="60"  height="210" rx="2"/>
-        <rect x="625" y="130" width="45"  height="170" rx="2"/>
-        <rect x="660" y="65"  width="30"  height="235" rx="2"/>
-        <rect x="680" y="100" width="65"  height="200" rx="2"/>
-        <rect x="735" y="40"  width="35"  height="260" rx="2"/>
-        <rect x="760" y="115" width="50"  height="185" rx="2"/>
-        <rect x="800" y="80"  width="40"  height="220" rx="2"/>
-        <rect x="830" y="145" width="55"  height="155" rx="2"/>
-        <rect x="875" y="60"  width="30"  height="240" rx="2"/>
-        <rect x="895" y="95"  width="70"  height="205" rx="2"/>
-        <rect x="955" y="125" width="45"  height="175" rx="2"/>
-        <rect x="990" y="50"  width="35"  height="250" rx="2"/>
-        <rect x="1015" y="105" width="60" height="195" rx="2"/>
-        <rect x="1065" y="70"  width="40" height="230" rx="2"/>
-        <rect x="1095" y="140" width="50" height="160" rx="2"/>
-        <rect x="1135" y="85"  width="30" height="215" rx="2"/>
-        <rect x="1155" y="45"  width="55" height="255" rx="2"/>
-        <rect x="1200" y="110" width="45" height="190" rx="2"/>
-        <rect x="1235" y="65"  width="35" height="235" rx="2"/>
-        <rect x="1260" y="130" width="60" height="170" rx="2"/>
-        <rect x="1310" y="90"  width="40" height="210" rx="2"/>
-        <rect x="1340" y="55"  width="60" height="245" rx="2"/>
-      </svg>
-    </div>
+  <div class="grid-overlay"></div>
+  <div class="particles" id="particles"></div>
 
-    <!-- Grid de fondo estilo plano urbano -->
-    <div class="grid-overlay"></div>
+  <div id="start-menu">
+    <div class="menu-inner">
+      <div class="logo-block">
+        <span class="logo-tag">— URBAN SIMULATION —</span>
+        <h1 class="logo-title">CITY<br><span class="logo-accent">BUILDER</span></h1>
+        <div class="logo-line"></div>
+      </div>
 
-    <!-- Partículas / puntos de luz -->
-    <div class="particles" id="particles"></div>
+      <div class="menu-actions">
+        <button id="select-map-btn" class="btn btn-primary" type="button">
+          <span class="btn-icon">✈</span>
+          <span class="btn-label">Seleccionar Mapa</span>
+        </button>
 
-    <!-- Menú principal -->
-    <div id="start-menu">
-      <div class="menu-inner">
+        <input type="file" id="map-file-input" accept=".txt">
 
-        <div class="logo-block">
-          <span class="logo-tag">— URBAN SIMULATION —</span>
-          <h1 class="logo-title">CITY<br/><span class="logo-accent">BUILDER</span></h1>
-          <div class="logo-line"></div>
-        </div>
+        <button id="play-btn" class="btn btn-secondary" type="button" disabled>
+          <span class="btn-label">Jugar</span>
+          <span class="btn-badge" id="map-name-badge"></span>
+        </button>
 
-        <div class="menu-actions">
-          <button id="select-map-btn" class="btn btn-primary">
-            <span class="btn-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-              </svg>
-            </span>
-            <span class="btn-label">Seleccionar Mapa</span>
-          </button>
+        <button id="continue-btn" class="btn btn-secondary" type="button" hidden disabled>
+          <span class="btn-label">Continuar</span>
+        </button>
+      </div>
 
-          <input type="file" id="map-file-input" accept=".txt" />
+      <div id="file-info" class="file-info"></div>
 
-          <button id="play-btn" class="btn btn-secondary" disabled>
-            <span class="btn-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-            </span>
-            <span class="btn-label">Jugar</span>
-            <span class="btn-badge" id="map-name-badge"></span>
-          </button>
-        </div>
+      <div class="location-block">
+        <label for="real-city-select" class="location-label">Ciudad real de Colombia</label>
+        <select id="real-city-select" class="location-select">
+          <option value="">Cargando ciudades...</option>
+        </select>
+        <p id="real-city-meta" class="location-meta">Selecciona una ciudad para clima y noticias.</p>
+      </div>
 
-        <div id="file-info" class="file-info"></div>
-
-        <div class="menu-footer">
-          <span>v1.0.0</span>
-          <span class="dot">·</span>
-          <span>Carga un mapa .txt para comenzar</span>
-        </div>
-
+      <div class="menu-footer">
+        <span>v1.0.0</span>
+        <span class="dot">·</span>
+        <span>Carga un mapa .txt para comenzar</span>
       </div>
     </div>
   </div>
-
-</body>
-</html>
+</div>
