@@ -1,31 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-@import url('constructionMenu.css');
-@import url('resourcePanel.css');
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("constructionMenu.css");
+@import url("resourcePanel.css");
 
 :root {
-  --bg-base:        #080c14;
-  --bg-surface:     #0d1520;
-  --bg-glass:       rgba(255,255,255,0.04);
-  --bg-glass-hover: rgba(255,255,255,0.08);
-  --border:         rgba(255,255,255,0.07);
-  --border-accent:  rgba(88,166,255,0.30);
-  --accent:         #58a6ff;
-  --accent-glow:    rgba(88,166,255,0.18);
-  --accent-2:       #3dffa0;
-  --danger:         #ff5c6a;
-  --warn:           #ffb347;
-  --text-primary:   #e6edf3;
+  --bg-base: #080c14;
+  --bg-surface: #0d1520;
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-accent: rgba(88, 166, 255, 0.3);
+  --accent: #58a6ff;
+  --accent-glow: rgba(88, 166, 255, 0.18);
+  --accent-2: #3dffa0;
+  --danger: #ff5c6a;
+  --warn: #ffb347;
+  --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --text-muted:     #484f58;
-  --shadow-panel:   0 8px 32px rgba(0,0,0,0.55);
-  --radius-sm:      6px;
-  --radius-md:      10px;
-  --radius-lg:      16px;
-  --font-ui:        'Rajdhani', sans-serif;
-  --font-mono:      'IBM Plex Mono', monospace;
+  --text-muted: #484f58;
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --font-ui: "Rajdhani", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -38,8 +40,8 @@ body {
   overflow: hidden;
   /* subtle grid texture */
   background-image:
-    linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(88, 166, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88, 166, 255, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -63,17 +65,17 @@ body {
 
 .sidebar.left {
   border-right: 1px solid var(--border);
-  box-shadow: 2px 0 40px rgba(0,0,0,0.40);
+  box-shadow: 2px 0 40px rgba(0, 0, 0, 0.4);
 }
 
 .sidebar.right {
   border-left: 1px solid var(--border);
-  box-shadow: -2px 0 40px rgba(0,0,0,0.40);
+  box-shadow: -2px 0 40px rgba(0, 0, 0, 0.4);
 }
 
 /* Subtle scanline overlay on sidebars */
 .sidebar::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -81,14 +83,17 @@ body {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0,0,0,0.10) 2px,
-    rgba(0,0,0,0.10) 4px
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
   );
   opacity: 0.5;
   z-index: 0;
 }
 
-.sidebar > * { position: relative; z-index: 1; }
+.sidebar > * {
+  position: relative;
+  z-index: 1;
+}
 
 .center {
   display: flex;
@@ -151,11 +156,15 @@ body {
 
 /* Vignette on map edges */
 .center::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(8,12,20,0.75) 100%);
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(8, 12, 20, 0.75) 100%
+  );
   z-index: 5;
 }
 
@@ -175,7 +184,7 @@ body {
   left: 50%;
   transform-origin: center center;
   will-change: transform;
-  transition: transform 0.18s cubic-bezier(.4,1.4,.6,1);
+  transition: transform 0.18s cubic-bezier(0.4, 1.4, 0.6, 1);
 }
 
 #city-map {
