@@ -1,129 +1,168 @@
-const DEFAULT_ALLOWED_CODES = [
-  'R1', 'R2',
-  'C1', 'C2',
-  'I1', 'I2',
-  'U1', 'U2',
-  'S1', 'S2', 'S3',
-  'P1',
-];
+const BUILDING_CODES = {
+  R1: 'residential',
+  R2: 'residential',
+  C1: 'commercial',
+  C2: 'commercial',
+  I1: 'industrial',
+  I2: 'industrial',
+  S1: 'service',
+  S2: 'service',
+  S3: 'service',
+  U1: 'utility',
+  U2: 'utility',
+  P1: 'park',
+};
 
-export default class MapValidator {
-  static MIN_SIZE = 15;
-  static MAX_SIZE = 30;
-  static GRASS_TOKEN = 'g';
-  static ROAD_TOKEN = 'r';
-  static ALLOWED_BUILDING_CODES = new Set(DEFAULT_ALLOWED_CODES);
+function normalizeToken(token) {
+  return String(token ?? '').trim().toUpperCase();
+}
 
-  static validateText(text, options = {}) {
-    const parsed = this.parse(text, options);
+function parseCell(token, x, y) {
+  const raw = String(token ?? '').trim();
+  const normalized = normalizeToken(raw);
 
-    if (!parsed.valid) {
-      const detail = parsed.errors.join(' | ');
-      throw new Error(`Mapa inválido: ${detail}`);
-    }
-
-    return parsed;
+  if (!raw) {
+    return {
+      x,
+      y,
+      raw,
+      token: '',
+      valid: false,
+      error: `Celda vacía en (${x}, ${y})`,
+      type: 'invalid',
+      code: null,
+      category: null,
+    };
   }
 
-  static parse(text, options = {}) {
-    const {
-      minSize = this.MIN_SIZE,
-      maxSize = this.MAX_SIZE,
-      allowComments = true,
-    } = options;
+  if (normalized === 'G') {
+    return {
+      x,
+      y,
+      raw,
+      token: 'g',
+      valid: true,
+      type: 'grass',
+      code: null,
+      category: null,
+    };
+  }
 
-    const errors = [];
-    const warnings = [];
+  if (normalized === 'R') {
+    return {
+      x,
+      y,
+      raw,
+      token: 'r',
+      valid: true,
+      type: 'road',
+      code: null,
+      category: null,
+    };
+  }
 
-    if (typeof text !== 'string') {
-      return {
-        valid: false,
-        errors: ['El contenido del mapa debe ser texto.'],
-        warnings,
-        width: 0,
-        height: 0,
-        rows: [],
-        cells: [],
-        stats: this.#emptyStats(),
-      };
+  if (BUILDING_CODES[normalized]) {
+    return {
+      x,
+      y,
+      raw,
+      token: normalized,
+      valid: true,
+      type: 'building',
+      code: normalized,
+      category: BUILDING_CODES[normalized],
+    };
+  }
+
+  return {
+    x,
+    y,
+    raw,
+    token: raw,
+    valid: false,
+    error: `Token inválido "${raw}" en (${x}, ${y})`,
+    type: 'invalid',
+    code: null,
+    category: null,
+  };
+}
+
+export default class MapValidator {
+  static validateText(text) {
+    const normalizedText = String(text ?? '')
+      .replace(/^\uFEFF/, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .trim();
+
+    if (!normalizedText) {
+      throw new Error('Mapa inválido: El archivo está vacío o no contiene filas válidas.');
     }
 
-    const normalizedLines = text
-      .replace(/\uFEFF/g, '')
-      .split(/\r?\n/)
+    const lines = normalizedText
+      .split('\n')
       .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .filter((line) => !(allowComments && line.startsWith('#')));
+      .filter(Boolean);
 
-    if (normalizedLines.length === 0) {
-      return {
-        valid: false,
-        errors: ['El archivo está vacío o no contiene filas válidas.'],
-        warnings,
-        width: 0,
-        height: 0,
-        rows: [],
-        cells: [],
-        stats: this.#emptyStats(),
-      };
+    if (lines.length === 0) {
+      throw new Error('Mapa inválido: El archivo está vacío o no contiene filas válidas.');
     }
 
-    const rows = normalizedLines.map((line) => line.split(/\s+/).filter(Boolean));
-    const width = rows[0]?.length ?? 0;
+    const rows = lines.map((line) => line.split(/\s+/).filter(Boolean));
+
+    const width = rows[0].length;
     const height = rows.length;
 
-    if (width < minSize || width > maxSize) {
-      errors.push(`El ancho del mapa debe estar entre ${minSize} y ${maxSize}. Se recibió ${width}.`);
+    if (width === 0) {
+      throw new Error('Mapa inválido: No se encontraron columnas válidas.');
     }
 
-    if (height < minSize || height > maxSize) {
-      errors.push(`El alto del mapa debe estar entre ${minSize} y ${maxSize}. Se recibió ${height}.`);
-    }
+    const errors = [];
+    const cells = [];
 
-    rows.forEach((row, rowIndex) => {
+    for (let y = 0; y < rows.length; y++) {
+      const row = rows[y];
+
       if (row.length !== width) {
         errors.push(
-          `La fila ${rowIndex + 1} tiene ${row.length} columnas y se esperaban ${width}.`,
+          `Fila ${y + 1} inválida: tiene ${row.length} columnas y se esperaban ${width}.`,
         );
       }
-    });
 
-    const stats = this.#emptyStats();
+      const parsedRow = [];
 
-    const cells = rows.map((row, y) =>
-      row.map((rawToken, x) => {
-        const token = this.normalizeToken(rawToken);
-        const descriptor = this.describeToken(token);
+      for (let x = 0; x < row.length; x++) {
+        const parsed = parseCell(row[x], x, y);
 
-        if (!descriptor.valid) {
-          errors.push(`Token inválido '${rawToken}' en fila ${y + 1}, columna ${x + 1}.`);
-        } else {
-          stats.total += 1;
-          stats[descriptor.type] += 1;
-
-          if (descriptor.type === 'building') {
-            stats.buildingsByCode[descriptor.code] = (stats.buildingsByCode[descriptor.code] ?? 0) + 1;
-          }
+        if (!parsed.valid && parsed.error) {
+          errors.push(parsed.error);
         }
 
-        return {
-          x,
-          y,
-          raw: rawToken,
-          token,
-          ...descriptor,
-        };
-      }),
-    );
+        parsedRow.push(parsed);
+      }
 
-    if (stats.road === 0) {
-      warnings.push('El mapa no contiene vías (r).');
+      cells.push(parsedRow);
     }
+
+    const flatCells = cells.flat();
+
+    const stats = {
+      total: flatCells.length,
+      grass: flatCells.filter((c) => c.type === 'grass').length,
+      road: flatCells.filter((c) => c.type === 'road').length,
+      building: flatCells.filter((c) => c.type === 'building').length,
+      buildingsByCode: flatCells.reduce((acc, cell) => {
+        if (cell.code) {
+          acc[cell.code] = (acc[cell.code] ?? 0) + 1;
+        }
+        return acc;
+      }, {}),
+    };
 
     return {
       valid: errors.length === 0,
       errors,
-      warnings,
+      warnings: [],
       width,
       height,
       rows,
@@ -131,95 +170,4 @@ export default class MapValidator {
       stats,
     };
   }
-
-  static normalizeToken(token) {
-    if (typeof token !== 'string') return '';
-
-    const trimmed = token.trim();
-    if (!trimmed) return '';
-
-    const lower = trimmed.toLowerCase();
-    if (lower === this.GRASS_TOKEN || lower === this.ROAD_TOKEN) {
-      return lower;
-    }
-
-    return trimmed.toUpperCase();
-  }
-
-  static describeToken(token) {
-    if (token === this.GRASS_TOKEN) {
-      return {
-        valid: true,
-        type: 'grass',
-        code: null,
-        category: null,
-      };
-    }
-
-    if (token === this.ROAD_TOKEN) {
-      return {
-        valid: true,
-        type: 'road',
-        code: null,
-        category: null,
-      };
-    }
-
-    if (this.ALLOWED_BUILDING_CODES.has(token)) {
-      return {
-        valid: true,
-        type: 'building',
-        code: token,
-        category: this.getBuildingCategory(token),
-      };
-    }
-
-    return {
-      valid: false,
-      type: 'unknown',
-      code: token || null,
-      category: null,
-    };
-  }
-
-  static getBuildingCategory(code) {
-    if (typeof code !== 'string' || code.length === 0) return null;
-
-    switch (code[0].toUpperCase()) {
-      case 'R': return 'residential';
-      case 'C': return 'commercial';
-      case 'I': return 'industrial';
-      case 'U': return 'utility';
-      case 'S': return 'service';
-      case 'P': return 'park';
-      default: return null;
-    }
-  }
-
-  static toSerializableGrid(parsedMap) {
-    const parsed = parsedMap?.cells ? parsedMap : this.validateText(parsedMap);
-
-    return parsed.cells.map((row) =>
-      row.map((cell) => ({
-        token: cell.token,
-        type: cell.type,
-        code: cell.code,
-        category: cell.category,
-      })),
-    );
-  }
-
-  static #emptyStats() {
-    return {
-      total: 0,
-      grass: 0,
-      road: 0,
-      building: 0,
-      buildingsByCode: {},
-    };
-  }
-}
-
-if (typeof window !== 'undefined') {
-  window.MapValidator = MapValidator;
 }

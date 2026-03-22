@@ -1,83 +1,79 @@
 import MapValidator from '../../../utils/MapValidator.js';
 
 export default class FileLoaderController {
-  static async loadFromFile(file, options = {}) {
-    if (!(file instanceof File)) {
-      throw new Error('Debes seleccionar un archivo válido.');
+  static async loadFromFile(file) {
+    if (!file) {
+      throw new Error('No se seleccionó ningún archivo.');
     }
 
-    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (extension !== 'txt') {
-      throw new Error('Solo se permiten archivos .txt para cargar mapas.');
-    }
+    const text = await file.text();
 
-    const content = await this.readFileAsText(file);
-
-    return this.loadFromText(content, {
-      ...options,
-      fileName: file.name,
-      fileSize: file.size,
+    return this.loadFromText(text, {
+      fileName: file.name ?? 'mapa.txt',
+      fileSize: file.size ?? 0,
     });
   }
 
-  static async loadFromProject(path, options = {}) {
-    if (typeof path !== 'string' || path.trim() === '') {
-      throw new Error('Debes indicar una ruta válida para el mapa.');
-    }
-
+  static async loadFromProject(path) {
     const response = await fetch(path);
 
     if (!response.ok) {
       throw new Error(`No se pudo cargar el archivo del proyecto: ${path}`);
     }
 
-    const content = await response.text();
+    const text = await response.text();
 
-    return this.loadFromText(content, {
-      ...options,
+    return this.loadFromText(text, {
       fileName: path.split('/').pop() ?? 'mapa.txt',
-      fileSize: content.length,
+      fileSize: new Blob([text]).size,
     });
   }
 
-  static loadFromText(text, options = {}) {
-    const parsed = MapValidator.validateText(
-      text,
-      options.validationOptions ?? {}
-    );
+  static loadFromText(text, { fileName = 'mapa.txt', fileSize = 0 } = {}) {
+    const normalizedText = this.normalizeText(text);
+
+    if (!normalizedText.trim()) {
+      throw new Error('Mapa inválido: El archivo está vacío o no contiene filas válidas.');
+    }
+
+    let parsed;
+
+    try {
+      parsed = MapValidator.validateText(normalizedText);
+    } catch (error) {
+      throw new Error(error.message || 'Mapa inválido.');
+    }
+
+    if (!parsed?.valid) {
+      const msg = parsed?.errors?.length
+        ? parsed.errors.join(' | ')
+        : 'Mapa inválido.';
+      throw new Error(msg);
+    }
 
     return {
-      fileName: options.fileName ?? 'mapa.txt',
-      fileSize: options.fileSize ?? null,
-      content: text,
+      fileName,
+      fileSize,
+      content: normalizedText,
       parsed,
       metadata: {
         width: parsed.width,
         height: parsed.height,
         stats: parsed.stats,
-        warnings: parsed.warnings,
       },
-      serializableGrid: MapValidator.toSerializableGrid(parsed),
+      serializableGrid: this.toSerializableGrid(parsed),
     };
   }
 
-  static readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        resolve(String(event.target?.result ?? ''));
-      };
-
-      reader.onerror = () => {
-        reject(new Error(`No se pudo leer el archivo '${file.name}'.`));
-      };
-
-      reader.readAsText(file);
-    });
+  static normalizeText(text) {
+    return String(text ?? '')
+      .replace(/^\uFEFF/, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .trim();
   }
-}
 
-if (typeof window !== 'undefined') {
-  window.FileLoaderController = FileLoaderController;
+  static toSerializableGrid(parsed) {
+    return parsed.cells.map((row) => row.map((cell) => cell.token));
+  }
 }
